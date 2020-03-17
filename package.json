@@ -1,0 +1,29 @@
+{
+  "name": "siaprime-explorer",
+  "version": "0.1.0",
+  "description": "a nodejs based block explorer for the Sia Prime project",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/camthegeek/siaprime-explorer.git"
+  },
+  "keywords": [
+    "sia",
+    "siaprime",
+    "explorer",
+    "block",
+    "explorer"
+  ],
+  "author": "",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/camthegeek/siaprime-explorer/issues"
+  },
+  "homepage": "https://github.com/camthegeek/siaprime-explorer#readme",
+  "dependencies": {
+    "siaprime.js": "github:camthegeek/Nodejs-SiaPrime"
+  }
+}
