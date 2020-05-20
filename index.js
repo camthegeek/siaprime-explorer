@@ -69,6 +69,9 @@ async function startUp() {  // the main function ran when script is started
     }
 }
 
+// seems stuff during this interval loop. 74953. 
+// fetches same blocks over and over. not sure why it happened yet.
+
 startUp(); // run the damn thing when you launch.
 setInterval(startUp, 120000); // run it every so often to catch new blocks
 
@@ -116,7 +119,7 @@ function getBlocks(spd, topHeight, startHeight) { // this function deserves a be
                 await getBlockInfo(spd, blockNumber).then((blockInfo) => { // getblockinfo, and when we g et data
                     let transactions = blockInfo.block.transactions; // store all the block transactions in 1 temp variable                  
                     processTransaction(transactions, blockInfo.block.maturitytimestamp); // process the tx; add to sql here.
-                    addToBlocks(blockInfo.block.height, blockInfo.block.blockid, blockInfo.block.difficulty, blockInfo.block.estimatedhashrate, blockInfo.block.maturitytimestamp, blockInfo.block.totalcoins, blockInfo.block.minerpayoutcount, blockInfo.block.transactioncount, blockInfo.block.siacoininputcount, blockInfo.block.siacoinoutputcount, blockInfo.block.filecontractcount, blockInfo.block.filecontractrevisioncount, blockInfo.block.storageproofcount, blockInfo.block.siafundinputcount, blockInfo.block.siafundoutputcount, blockInfo.block.minerfeecount, blockInfo.block.arbitrarydatacount, blockInfo.block.transactionsignaturecount, blockInfo.block.activecontractcost, blockInfo.block.activecontractcount, blockInfo.block.activecontractsize, blockInfo.block.totalcontractcost, blockInfo.block.totalcontractsize, blockInfo.block.totalrevisionvolume); // add to block sql
+                    addToBlocks(blockInfo.block.height, blockInfo.block.blockid, blockInfo.block.difficulty, blockInfo.block.estimatedhashrate, blockInfo.block.maturitytimestamp, blockInfo.block.totalcoins, blockInfo.block.minerpayoutcount, blockInfo.block.transactioncount, blockInfo.block.siacoininputcount, blockInfo.block.siacoinoutputcount, blockInfo.block.filecontractcount, blockInfo.block.filecontractrevisioncount, blockInfo.block.storageproofcount, blockInfo.block.siafundinputcount, blockInfo.block.siafundoutputcount, blockInfo.block.minerfeecount, blockInfo.block.arbitrarydatacount, blockInfo.block.transactionsignaturecount, blockInfo.block.activecontractcost, blockInfo.block.activecontractcount, blockInfo.block.activecontractsize, blockInfo.block.totalcontractcost, blockInfo.block.totalcontractsize, blockInfo.block.totalrevisionvolume).then((added) => console.log(added)).catch((err) => console.log(err)); // add to block sql
                 });
                 blockNumber++; // increase block counter in do/while statement
             } while (blockNumber <= topHeight) // but only do it while blockNumber is less than or equal to our consensus height.
@@ -146,7 +149,11 @@ function processTransaction(transactions, timestamp) { // appropriately named fu
                 txTotal = 10; // set the reward to flat 10 scp
             }
         } else { // if siacoininputs contains stuff..
+            if ((transactions[t].rawtransaction.siacoinoutputs).length === 0) { 
+                txType = 'hostAnn';
+            } else {
             txType = 'tx'; // mark it as a transaction
+            }
             for (tt = 0; tt < transactions[t].rawtransaction.siacoinoutputs.length; tt++) {  // for each siacoinoutput. . 
                 txTotal += transactions[t].rawtransaction.siacoinoutputs[tt].value / scprimecoinprecision; // lets save how much each tx had in it
             }
