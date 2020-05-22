@@ -230,10 +230,12 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             }
             /* here we will parse minerpayouts (block reward) */
             //console.log('begin processing for '+txType+ ' transaction with hash of '+transactions[t].id);
+            (async() => { 
             for (e = 0; e < minerpayouts.length; e++) {
                 //console.log('Wallet '+minerpayouts[e].unlockhash + ' was rewarded '+ minerpayouts[e].value/scprimecoinprecision+ ' under this transaction.')
-                addToAddress(minerpayouts[e].unlockhash, minerpayouts[e].value, transactions[t].id, 'in', txType, transactions[t].height);
+                await addToAddress(minerpayouts[e].unlockhash, minerpayouts[e].value, transactions[t].id, 'in', txType, transactions[t].height);
             }
+        })();
         } else { // if siacoininputs contains stuff..
             if ((transactions[t].rawtransaction.siacoinoutputs).length === 0) {
                 txType = 'hostAnn';
@@ -246,15 +248,17 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
         }
         if (txType == 'tx') {
             /* cycle through addresses */
+            (async() => { 
             for (q = 0; q < transactions[t].siacoininputoutputs.length; q++) {
                 /* send each sender to addresses table with amount */
-                addToAddress(transactions[t].siacoininputoutputs[q].unlockhash, transactions[t].siacoininputoutputs[q].value, transactions[t].id, 'out', txType, transactions[t].height);
+                await addToAddress(transactions[t].siacoininputoutputs[q].unlockhash, transactions[t].siacoininputoutputs[q].value, transactions[t].id, 'out', txType, transactions[t].height);
             }
             for (r = 0; r < transactions[t].rawtransaction.siacoinoutputs.length; r++) {
-                addToAddress(transactions[t].rawtransaction.siacoinoutputs[r].unlockhash, transactions[t].rawtransaction.siacoinoutputs[r].value, transactions[t].id, 'in', txType, transactions[t].height);
+                await addToAddress(transactions[t].rawtransaction.siacoinoutputs[r].unlockhash, transactions[t].rawtransaction.siacoinoutputs[r].value, transactions[t].id, 'in', txType, transactions[t].height);
             }
             
-            addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
+            await addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
+        })();
         }
     }
     async function addToTransactions(height, hash, parent, type, total, fees, timestamp, ) { // add to transactions table
