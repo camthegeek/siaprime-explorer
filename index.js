@@ -108,16 +108,16 @@ function startSync(startHeight) { // start synchronizing blocks from startHeight
                 .then((consensus) => { // with that data..
                     // var topHeight = 43; // purely for testing
                     var topHeight = consensus.height; // we want to know the current height of the blockchain
-                    console.log('startHeight: ', startHeight);
-                    console.log('topHeight: ', topHeight);
+                    // console.log('startHeight: ', startHeight);
+                    // console.log('topHeight: ', topHeight);
                     if ((startHeight - 1) == topHeight) { // if our startheight (minus one, because we counted all the rows and found ourselves 1 ahead of the blockchain), is equal to consensus height
-                        console.log('heights are the same, taking a break');
+                        // console.log('heights are the same, taking a break');
                         return; // lets not do a damn thing at all.
                     }
                     getBlocks(spd, topHeight, startHeight); // lets start processing the blocks starting at startHeight until we reach topHeight
                 })
                 .catch((error) => {  // if there's an error. . . 
-                    console.log(error);  // scream about it
+                    // console.log(error);  // scream about it
                 })
         })
 }
@@ -140,6 +140,7 @@ function getBlocks(spd, topHeight, startHeight) { // this function deserves a be
         (async () => { // make everything from this point forward asynchronous 
             let blockNumber = startHeight; // we start syncing from this height (last block in sql)
             do { // do all this stuff. . .
+                console.log('Beginning processing on', blockNumber)
                 await getBlockInfo(spd, blockNumber).then((blockInfo) => { // getblockinfo, and when we g et data
                     let transactions = blockInfo.block.transactions; // store all the block transactions in 1 temp variable
                     processTransaction(transactions, blockInfo.block.rawblock.timestamp, blockInfo.block.rawblock.minerpayouts); // process the tx; add to sql here.
@@ -175,13 +176,17 @@ function getBlocks(spd, topHeight, startHeight) { // this function deserves a be
                         blockInfo.block.totalcontractcost, 
                         blockInfo.block.totalcontractsize, 
                         blockInfo.block.totalrevisionvolume,
-                        minerarbitrarydata).then((added) => console.log(added)).catch((err) => console.log(err)); // add to block sql
+                        minerarbitrarydata).then((added) =>{ 
+                            //console.log(added)
+                        }).catch((err) => console.log(err)); // add to block sql
                 });
                 blockNumber++; // increase block counter in do/while statement
             } while (blockNumber <= topHeight) // but only do it while blockNumber is less than or equal to our consensus height.
         })(); // end of the async function
     })
-        .catch((error) => { console.log(error) }) // cry about errors
+        .catch((error) => { 
+            //console.log(error) // cry about errors
+        }) 
 }
 
 function processTransaction(transactions, timestamp, minerpayouts) { // appropriately named function.
@@ -205,11 +210,10 @@ function processTransaction(transactions, timestamp, minerpayouts) { // appropri
                 txTotal = 10; // set the reward to flat 10 scp
             }
             /* here we will parse minerpayouts (block reward) */
-            console.log('begin processing for '+txType+ ' transaction with hash of '+transactions[t].id);
+            //console.log('begin processing for '+txType+ ' transaction with hash of '+transactions[t].id);
             for (e=0; e<minerpayouts.length; e++) {
-                console.log('Wallet '+minerpayouts[e].unlockhash + ' was rewarded '+ minerpayouts[e].value/scprimecoinprecision+ ' under this transaction.')
+                //console.log('Wallet '+minerpayouts[e].unlockhash + ' was rewarded '+ minerpayouts[e].value/scprimecoinprecision+ ' under this transaction.')
                 addToAddress(minerpayouts[e].unlockhash, minerpayouts[e].value, transactions[t].id, 'in', txType, transactions[t].height);
-
             }
         
         } else { // if siacoininputs contains stuff..
@@ -224,18 +228,18 @@ function processTransaction(transactions, timestamp, minerpayouts) { // appropri
         }
         if (txType == 'tx') {
 
-            console.log('------ TX INFO ------');
-            console.log(transactions[t]);
+            // console.log('------ TX INFO ------');
+            // console.log(transactions[t]);
             //console.log('sender information: ', transactions[t].siacoininputoutputs)
             for (q=0;q<transactions[t].siacoininputoutputs.length;q++) { 
-                console.log('------ SENDER '+q+' INFO ------');
-                console.log(transactions[t].siacoininputoutputs[q]);
+                //console.log('------ SENDER '+q+' INFO ------');
+                //console.log(transactions[t].siacoininputoutputs[q]);
                 /* send each sender to addresses table with amount */
                 addToAddress(transactions[t].siacoininputoutputs[q].unlockhash, transactions[t].siacoininputoutputs[q].value, transactions[t].id, 'out', txType, transactions[t].height);
             }
-            for (r=0;r<transactions[t].siacoininputoutputs.length;r++) {
-                console.log('------ RECEIVERS '+r+' INFO ------')
-                console.log(transactions[t].rawtransaction.siacoinoutputs[r]);
+            for (r=0;r<transactions[t].rawtransaction.siacoinoutputs.length;r++) {
+                //console.log('------ RECEIVERS '+r+' INFO -- for tx: '+transactions[t].id+ '----')
+                //console.log(transactions[t].rawtransaction.siacoinoutputs[r]);
                 addToAddress(transactions[t].rawtransaction.siacoinoutputs[r].unlockhash, transactions[t].rawtransaction.siacoinoutputs[r].value, transactions[t].id, 'in', txType, transactions[t].height);
             }
         }
@@ -251,7 +255,7 @@ function addToBlocks(height, hash, difficulty, estimatedhashrate,
     siafundinputcount, siafundoutputcount, minerfeecount, arbitrarydatacount, 
     transactionsignaturecount, activecontractcost, activecontractcount, activecontractsize, 
     totalcontractcost, totalcontractsize, totalrevisionvolume,minerarbitrarydata) { // appropriately named function
-    console.log('attempting to add ' + height + ' to database');
+    //console.log('attempting to add ' + height + ' to database');
     return knex('blocks').insert({
         height: height,
         hash: hash,
@@ -285,8 +289,8 @@ function addToBlocks(height, hash, difficulty, estimatedhashrate,
 }
 
 
-function addToTransactions(height, hash, parent, type, total, fees, timestamp,) { // add to transactions table
-    console.log('attempting to add tx ' + hash + ' to database as a '+type+' transaction.' );
+function addToTransactions(height, hash, parent, type, total, fees, timestamp, ) { // add to transactions table
+    //console.log('attempting to add tx ' + hash + ' to database as a '+type+' transaction.' );
     return knex('transactions').insert({
         block_height: height,
         tx_hash: hash,
@@ -296,8 +300,10 @@ function addToTransactions(height, hash, parent, type, total, fees, timestamp,) 
         fees: fees,
         timestamp: timestamp
     }).then((results) => {
-        console.log(results)
-    }).catch(error => console.log(error))
+        //console.log(results)
+    }).catch((error) => {
+        // console.log(error)
+    })
 }
 
 function addToAddress(address, amount, tx_hash, direction, type, height) {
@@ -309,8 +315,10 @@ function addToAddress(address, amount, tx_hash, direction, type, height) {
         type: type,
         height: height
     }).then((res)=> {
-        console.log(res)
-    }).catch((err) => console.log(err))
+        //console.log(res)
+    }).catch((err) => {
+        //console.log(err)
+    })
 }
 
 function getInfoBlock(id) { // this gets info on a block hash or height based on api URL
