@@ -24,13 +24,6 @@ function createBlockTable() {
             table.string('maturitytimestamp');  // block.maturitytimestamp
             table.string('timestamp');  // block.rawblock.timestamp
             table.string('parentid');   // block.rawblock.parentid
-            table.string('minerpayoutids'); // block.minerpayoutids
-            table.string('miner');  // block.rawblock.minerpayouts.unlockhash[0]
-            table.string('minervalue'); // block.rawblock.minerpayouts.value[0]
-            table.string('devfund');    // block.rawblock.minerpayouts.unlockhash[1]
-            table.string('devfundvalue');   // block.rawblock.minerpayouts.value[1]
-            table.string('nonce');  // block.rawblock.nonce
-            table.string('target'); // block.target
             table.string('totalcoins'); // block.totalcoins
             table.string('minerpayoutcount');   // block.minerpayoutcount
             table.string('transactioncount');   // block.transactioncount
@@ -50,16 +43,17 @@ function createBlockTable() {
             table.string('totalcontractcost');  // block.totalcontractcost
             table.string('totalcontractsize');  // block.totalcontractsize
             table.string('totalrevisionvolume');    // block.totalrevisionvolume
+            table.string('minerarbitrarydata'); // too lazy to fill this in --cam.
         })
         .createTable('transactions', function (tx) {
             tx.string('block_height');  // block.height
             tx.string('tx_hash');   // block.transactions.id
             tx.string('parent_block'); // block.trasactions.parent
-            tx.string('tx_type');  
+            tx.string('tx_type');
             tx.string('tx_total');  // block.transactions.rawtransaction.siacoinoutputs
             tx.string('fees');
             tx.string('timestamp'); // block.rawblock.timestamp
-            tx.string('filecontractids');  // block.transactions.filecontractids
+            /*tx.string('filecontractids');  // block.transactions.filecontractids
             tx.string('filecontractmissedproofoutputids');  // block.transactions.filecontractmissedproofoutputids
             tx.string('filecontractrevisionmissedproofoutputids');  // block.transactions.filecontractrevisionmissedproofoutputids
             tx.string('filecontractrevisionvalidproofoutputids');   // block.transactions.filecontractrevisionvalidproofoutputids
@@ -69,7 +63,15 @@ function createBlockTable() {
             tx.string('siafundinputoutputs');   // block.transactions.siafundinputoutputs
             tx.string('siafundoutputids');  // block.transactions.siafundoutputids
             tx.string('storageproofoutputids'); // block.transactions.storageproofoutputids
-            tx.string('storageproofoutputs');   // block.transactions.storageproofoutputs
+            tx.string('storageproofoutputs');   // block.transactions.storageproofoutputs*/
+        })
+        .createTable('address_history', function (addr) { 
+            addr.string('address');
+            addr.string('amount');
+            addr.string('tx_hash');
+            addr.string('direction');
+            addr.string('type');
+            addr.string('height');
         })
         .then((created) => {
             console.log(created)
@@ -85,6 +87,7 @@ async function startUp() {  // the main function ran when script is started
     } else { // if it does
         let counter = await knex('blocks').count({ height: 'height' }); // get total amount of rows from sql
         let height = JSON.parse(JSON.stringify(counter[0].height)); // parse the json, retreive height variable
+        // let height = 42; // purely for testing
         startSync(height); // start syncing from total row height (last block in sql)
     }
 }
@@ -103,6 +106,7 @@ function startSync(startHeight) { // start synchronizing blocks from startHeight
         .then((spd) => { // now that we're connected.. 
             spd.call('/consensus') // get consensus data
                 .then((consensus) => { // with that data..
+                    // var topHeight = 43; // purely for testing
                     var topHeight = consensus.height; // we want to know the current height of the blockchain
                     console.log('startHeight: ', startHeight);
                     console.log('topHeight: ', topHeight);
@@ -137,16 +141,41 @@ function getBlocks(spd, topHeight, startHeight) { // this function deserves a be
             let blockNumber = startHeight; // we start syncing from this height (last block in sql)
             do { // do all this stuff. . .
                 await getBlockInfo(spd, blockNumber).then((blockInfo) => { // getblockinfo, and when we g et data
-                    let transactions = blockInfo.block.transactions; // store all the block transactions in 1 temp variable                  
-                    processTransaction(transactions, blockInfo.block.rawblock.timestamp); // process the tx; add to sql here.
-                    addToBlocks(blockInfo.block.height, blockInfo.block.blockid, blockInfo.block.difficulty, blockInfo.block.estimatedhashrate, 
-                        blockInfo.block.maturitytimestamp, blockInfo.block.rawblock.timestamp, blockInfo.block.rawblock.parentid, blockInfo.block.minerpayouts, blockInfo.block.rawblock.minerpayouts.unlockhash[0],
-                        blockInfo.block.rawblock.minerpayouts.value[0], blockInfo.block.rawblock.minerpayouts.unlockhash[1], blockInfo.block.rawblock.minerpayouts.value[1],
-                        blockInfo.block.rawblock.nonce, blockInfo.block.target, blockInfo.block.totalcoins, blockInfo.block.minerpayoutcount, blockInfo.block.transactioncount, 
-                        blockInfo.block.siacoininputcount, blockInfo.block.siacoinoutputcount, blockInfo.block.filecontractcount, blockInfo.block.filecontractrevisioncount, 
-                        blockInfo.block.storageproofcount, blockInfo.block.siafundinputcount, blockInfo.block.siafundoutputcount, blockInfo.block.minerfeecount, 
-                        blockInfo.block.arbitrarydatacount, blockInfo.block.transactionsignaturecount, blockInfo.block.activecontractcost, blockInfo.block.activecontractcount, 
-                        blockInfo.block.activecontractsize, blockInfo.block.totalcontractcost, blockInfo.block.totalcontractsize, blockInfo.block.totalrevisionvolume).then((added) => console.log(added)).catch((err) => console.log(err)); // add to block sql
+                    let transactions = blockInfo.block.transactions; // store all the block transactions in 1 temp variable
+                    processTransaction(transactions, blockInfo.block.rawblock.timestamp, blockInfo.block.rawblock.minerpayouts); // process the tx; add to sql here.
+                    let minerarbitrarydata = ''
+                    for (a=0;a<transactions.length;a++){
+                        if ((transactions[a].rawtransaction.arbitrarydata).length > 0) { // if arbitrary data has something
+                            minerarbitrarydata = transactions[a].rawtransaction.arbitrarydata; // assume it's arbitrarydata submitted by miner
+                        }
+                    }
+                    addToBlocks(blockInfo.block.height, 
+                        blockInfo.block.blockid, 
+                        blockInfo.block.difficulty, 
+                        blockInfo.block.estimatedhashrate,
+                        blockInfo.block.maturitytimestamp, 
+                        blockInfo.block.rawblock.timestamp, 
+                        blockInfo.block.rawblock.parentid, 
+                        blockInfo.block.totalcoins, 
+                        blockInfo.block.minerpayoutcount, 
+                        blockInfo.block.transactioncount,
+                        blockInfo.block.siacoininputcount, 
+                        blockInfo.block.siacoinoutputcount, 
+                        blockInfo.block.filecontractcount, 
+                        blockInfo.block.filecontractrevisioncount,
+                        blockInfo.block.storageproofcount, 
+                        blockInfo.block.siafundinputcount, 
+                        blockInfo.block.siafundoutputcount, 
+                        blockInfo.block.minerfeecount,
+                        blockInfo.block.arbitrarydatacount, 
+                        blockInfo.block.transactionsignaturecount, 
+                        blockInfo.block.activecontractcost, 
+                        blockInfo.block.activecontractcount,
+                        blockInfo.block.activecontractsize, 
+                        blockInfo.block.totalcontractcost, 
+                        blockInfo.block.totalcontractsize, 
+                        blockInfo.block.totalrevisionvolume,
+                        minerarbitrarydata).then((added) => console.log(added)).catch((err) => console.log(err)); // add to block sql
                 });
                 blockNumber++; // increase block counter in do/while statement
             } while (blockNumber <= topHeight) // but only do it while blockNumber is less than or equal to our consensus height.
@@ -155,7 +184,7 @@ function getBlocks(spd, topHeight, startHeight) { // this function deserves a be
         .catch((error) => { console.log(error) }) // cry about errors
 }
 
-function processTransaction(transactions, timestamp) { // appropriately named function.
+function processTransaction(transactions, timestamp, minerpayouts) { // appropriately named function.
     let minerFees = 0; // set minerFees to zero
     let txType = ''; // allows us to use the txType variable anywhere in this function
 
@@ -167,37 +196,61 @@ function processTransaction(transactions, timestamp) { // appropriately named fu
         }
         if ((transactions[t].rawtransaction.minerfees).length === 0) { // if minerfees does not have anything in it
             minerFees = 0; // set fee to zero
-        }
-        if ((transactions[t].rawtransaction.arbitrarydata).length != 0) { // if arbitrary data has something
-            txType = 'minerarbitrarydata'; // assume it's arbitrarydata submitted by miner
-        }   
+        }       
         if ((transactions[t].rawtransaction.siacoininputs).length === 0) { // if siacoinputs is empty
-            txType = 'coinbase'; // assume it's a coinbase tx. coinbase tx is 300 scp per block but goes down 0.001 per block
+            txType = 'coinbase'; // assume it's a mined block with reward tx. block reward tx is 300 scp per block but goes down 0.001 per block
             if (transactions[t].height < 290000) { // so when we get to this height, there's a base of 10scp per block
                 txTotal = baseCoinbase - (transactions[t].height * 0.001); // until then, do the math right.
             } else { // otherwise.. 
                 txTotal = 10; // set the reward to flat 10 scp
             }
+            /* here we will parse minerpayouts (block reward) */
+            console.log('begin processing for '+txType+ ' transaction with hash of '+transactions[t].id);
+            for (e=0; e<minerpayouts.length; e++) {
+                console.log('Wallet '+minerpayouts[e].unlockhash + ' was rewarded '+ minerpayouts[e].value/scprimecoinprecision+ ' under this transaction.')
+                addToAddress(minerpayouts[e].unlockhash, minerpayouts[e].value, transactions[t].id, 'in', txType, transactions[t].height);
+
+            }
+        
         } else { // if siacoininputs contains stuff..
-            if ((transactions[t].rawtransaction.siacoinoutputs).length === 0) { 
+            if ((transactions[t].rawtransaction.siacoinoutputs).length === 0) {
                 txType = 'hostAnn';
             } else {
-            txType = 'tx'; // mark it as a transaction
+                txType = 'tx'; // mark it as a transaction
             }
             for (tt = 0; tt < transactions[t].rawtransaction.siacoinoutputs.length; tt++) {  // for each siacoinoutput. . 
                 txTotal += transactions[t].rawtransaction.siacoinoutputs[tt].value / scprimecoinprecision; // lets save how much each tx had in it
             }
         }
-        addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000, transactions[t].filecontractids,
-            transactions[t].filecontractmissedproofoutputids, transactions[t].filecontractrevisionmissedproofoutputids, transactions[t].filecontractrevisionvalidproofoutputids,
-            transactions[t].siacoininputoutputs, transactions[t].siacoinoutputids, transactions[t].siafundclaimoutputids, transactions[t].siafundinputoutputs, transactions[t].siafundoutputids, 
-            transactions[t].storageproofoutputids, transactions[t].storageproofoutputs); // then add it to sql.
+        if (txType == 'tx') {
+
+            console.log('------ TX INFO ------');
+            console.log(transactions[t]);
+            //console.log('sender information: ', transactions[t].siacoininputoutputs)
+            for (q=0;q<transactions[t].siacoininputoutputs.length;q++) { 
+                console.log('------ SENDER '+q+' INFO ------');
+                console.log(transactions[t].siacoininputoutputs[q]);
+                /* send each sender to addresses table with amount */
+                addToAddress(transactions[t].siacoininputoutputs[q].unlockhash, transactions[t].siacoininputoutputs[q].value, transactions[t].id, 'out', txType, transactions[t].height);
+            }
+            for (r=0;r<transactions[t].siacoininputoutputs.length;r++) {
+                console.log('------ RECEIVERS '+r+' INFO ------')
+                console.log(transactions[t].rawtransaction.siacoinoutputs[r]);
+                addToAddress(transactions[t].rawtransaction.siacoinoutputs[r].unlockhash, transactions[t].rawtransaction.siacoinoutputs[r].value, transactions[t].id, 'in', txType, transactions[t].height);
+            }
+        }
+        addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, 
+            txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000); // then add it to sql.
     }
 }
 
-function addToBlocks(height, hash, difficulty, estimatedhashrate, maturitytimestamp, timestamp, parentid, minerpayoutids, miner, minervalue, devfund, devfundvalue, nonce, target, 
-    totalcoins, minerpayoutcount, transactioncount, siacoininputcount, siacoinoutputcount, filecontractcount, filecontractrevisioncount, storageproofcount, siafundinputcount, 
-    siafundoutputcount, minerfeecount, arbitrarydatacount, transactionsignaturecount, activecontractcost, activecontractcount, activecontractsize, totalcontractcost, totalcontractsize, totalrevisionvolume) { // appropriately named function
+function addToBlocks(height, hash, difficulty, estimatedhashrate, 
+    maturitytimestamp, timestamp, parentid, 
+    totalcoins, minerpayoutcount, transactioncount, siacoininputcount,  
+    siacoinoutputcount, filecontractcount, filecontractrevisioncount, storageproofcount, 
+    siafundinputcount, siafundoutputcount, minerfeecount, arbitrarydatacount, 
+    transactionsignaturecount, activecontractcost, activecontractcount, activecontractsize, 
+    totalcontractcost, totalcontractsize, totalrevisionvolume,minerarbitrarydata) { // appropriately named function
     console.log('attempting to add ' + height + ' to database');
     return knex('blocks').insert({
         height: height,
@@ -207,13 +260,6 @@ function addToBlocks(height, hash, difficulty, estimatedhashrate, maturitytimest
         maturitytimestamp: maturitytimestamp,
         timestamp: timestamp,
         parentid: parentid,
-        minerpayoutids: minerpayoutids,
-        miner: miner,
-        minervalue: minervalue,
-        devfund: devfund,
-        devfundvalue: devfundvalue,
-        nonce: nonce,
-        target: target,
         totalcoins: totalcoins,
         minerpayoutcount: minerpayoutcount,
         transactioncount: transactioncount,
@@ -232,13 +278,15 @@ function addToBlocks(height, hash, difficulty, estimatedhashrate, maturitytimest
         activecontractsize: activecontractsize,
         totalcontractcost: totalcontractcost,
         totalcontractsize: totalcontractsize,
-        totalrevisionvolume: totalrevisionvolume
+        totalrevisionvolume: totalrevisionvolume,
+        minerarbitrarydata: minerarbitrarydata
+
     })
 }
 
-function addToTransactions(height, hash, parent, type, total, fees, timestamp, filecontractids, filecontractmissedproofoutputids, filecontractrevisionmissedproofoutputids,
-    filecontractrevisionvalidproofoutputids, siacoininputoutputs, siacoinoutputids, siafundclaimoutputids, siafundinputoutputs, siafundoutputids, storageproofoutputids, storageproofoutputs     ) { // add to transactions table
-    console.log('attempting to add tx ' + hash + ' to database');
+
+function addToTransactions(height, hash, parent, type, total, fees, timestamp,) { // add to transactions table
+    console.log('attempting to add tx ' + hash + ' to database as a '+type+' transaction.' );
     return knex('transactions').insert({
         block_height: height,
         tx_hash: hash,
@@ -246,22 +294,23 @@ function addToTransactions(height, hash, parent, type, total, fees, timestamp, f
         tx_type: type,
         tx_total: total,
         fees: fees,
-        timestamp: timestamp,
-        filecontractids: filecontractids,
-        filecontractmissedproofoutputids: filecontractmissedproofoutputids,
-        filecontractrevisionmissedproofoutputids: filecontractrevisionmissedproofoutputids,
-        filecontractrevisionvalidproofoutputids: filecontractrevisionvalidproofoutputids,
-        siacoininputoutputs: siacoininputoutputs,
-        siacoinoutputids: siacoinoutputids,
-        siafundclaimoutputids: siafundclaimoutputids,
-        siafundinputoutputs: siafundinputoutputs,
-        siafundoutputids: siafundoutputids,
-        storageproofoutputids: storageproofoutputids,
-        storageproofoutputs: storageproofoutputs
-
+        timestamp: timestamp
     }).then((results) => {
         console.log(results)
     }).catch(error => console.log(error))
+}
+
+function addToAddress(address, amount, tx_hash, direction, type, height) {
+    return knex('address_history').insert({
+        address: address,
+        amount: amount,
+        tx_hash: tx_hash,
+        direction: direction,
+        type: type,
+        height: height
+    }).then((res)=> {
+        console.log(res)
+    }).catch((err) => console.log(err))
 }
 
 function getInfoBlock(id) { // this gets info on a block hash or height based on api URL
@@ -299,15 +348,8 @@ app.get('/api/block/:id', (req, res) => {
             "difficulty": block.difficulty,
             "estimatedhashrate": block.estimatedhashrate,
             "maturitytimestamp": block.maturitytimestamp,
-            "timestamp" : block.rawblock.timestamp,
-            "parentid" : block.rawblock.parentid,
-            "minerpayoutids" : block.minerpayoutids,
-            "miner" : block.rawblock.minerpayouts.unlockhash[0],
-            "minervalue" : block.rawblock.minerpayouts.value[0],
-            "devfund" : block.rawblock.minerpayouts.unlockhash[1],
-            "devfundvalue" : block.rawblock.minerpayouts.value[1],
-            "nonce" : block.rawblock.nonce,
-            "target" : block.target,
+            "timestamp": block.timestamp,
+            "parentid": block.parentid,
             "totalcoins": block.totalcoins,
             "minerpayoutcount": block.minerpayoutcount,
             "transactioncount": block.transactioncount,
@@ -326,7 +368,8 @@ app.get('/api/block/:id', (req, res) => {
             "activecontractsize": block.activecontractsize,
             "totalcontractcost": block.totalcontractcost,
             "totalcontractsize": block.totalcontractsize,
-            "totalrevisionvolume": block.totalrevisionvolume
+            "totalrevisionvolume": block.totalrevisionvolume,
+            "minerarbitrarydata": block.minerarbitrarydata
         });
     })
 });
@@ -352,8 +395,8 @@ app.get('/api/tx/:id', (req, res) => {
                 "txType": results[0].tx_type,
                 "txTotal": results[0].tx_total,
                 "minerFees": results[0].fees,
-                "timestamp": results[0].timestamp,
-                "filecontractids": results[0].filecontractids,
+                "timestamp": results[0].timestamp/*,
+                *"filecontractids": results[0].filecontractids,
                 "filecontractmissedproofoutputids": results[0].filecontractrevisionmissedproofoutputids,
                 "filecontractrevisionmissedproofoutputids": results[0].filecontractrevisionmissedproofoutputids,
                 "filecontractrevisionvalidproofoutputids": results[0].filecontractrevisionvalidproofoutputids,
@@ -363,7 +406,7 @@ app.get('/api/tx/:id', (req, res) => {
                 "siafundinputoutputs": results[0].siafundinputoutputs,
                 "siafundoutputids": results[0].siafundoutputids,
                 "storageproofoutputids": results[0].storageproofoutputids,
-                "storageproofoutputs": reuslts[0].storageproofoutputs
+                "storageproofoutputs": reuslts[0].storageproofoutputs*/
 
             });
         })
