@@ -192,11 +192,13 @@ function getBlocks(spd, topHeight, startHeight) { // this function deserves a be
                                 .then((added) => {
                                     //console.log(' [BLOCK] Added to database on height: '+blockInfo.block.height);
                                     //console.log("block added: ", blockInfo.block.height)
-                                    processTransaction(transactions, blockInfo.block.rawblock.timestamp, blockInfo.block.rawblock.minerpayouts)
+                                    (async() => { 
+                                    await processTransaction(transactions, blockInfo.block.rawblock.timestamp, blockInfo.block.rawblock.minerpayouts)
                                         .then((txadded) => {
                                             //console.log(txadded);
                                             console.log('[TX]: Added all transactions for height:', blockInfo.block.height);
                                         }).catch((err) => console.log(err))
+                                    })();
                                 }).catch((err) => console.log(err)); // add to block sql
                         })();
                     });
