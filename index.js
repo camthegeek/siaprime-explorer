@@ -381,7 +381,7 @@ function getTx(tx) {
 }
 function getAddress(address) {  // fetch the address from the database -- probably will return more than one result.
     return new Promise(resolve => {
-        resolve(knex('addresses').where('address', address).select('*'));
+        resolve(knex('address_history').where('address', address).select('*'));
     })
 }
 /* api route for tx info */
@@ -413,9 +413,34 @@ app.get('/api/tx/:id', (req, res) => {
 });
 /* api route for address info */
 app.get('/api/address/:addr', (req, res) => {
-    res.json({
-        "test": "fail"
-    });
+    getAddress(req.params.addr)
+    .then((results) => {
+        let returnArray = {
+            "address" : results[0].address,
+            "transactions": [ ],
+            "totalSCP": [ ]
+        };
+        let total = 0;
+        for (b=0;b<results.length;b++) {
+            var item = {
+                "tx_hash": results[b].tx_hash,
+                "amount": results[b].amount,
+                "direction": results[b].direction
+            }
+            returnArray.transactions.push(item);
+            if (results[a].direction == "in") {
+                total += parseInt(results[a].amount);
+            } else {
+                total -= parseInt(results[a].amount);
+            }
+            
+        }
+        returnArray.totalSCP.push(total/scprimecoinprecision);
+        res.json({
+            "data": returnArray
+        })
+    
+})
 });
 /* api route for contract info */
 app.get('/api/contract/:contract', (req, res) => {
