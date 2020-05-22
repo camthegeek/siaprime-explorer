@@ -162,7 +162,7 @@ function getBlocks(spd, topHeight, startHeight) { // this function deserves a be
                             }
                         }
                         (async () => {
-                            addToBlocks(blockInfo.block.height,
+                            await addToBlocks(blockInfo.block.height,
                                 blockInfo.block.blockid,
                                 blockInfo.block.difficulty,
                                 blockInfo.block.estimatedhashrate,
