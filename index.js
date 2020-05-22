@@ -8,11 +8,21 @@ const knex = require('knex')({
         user: config.sql.user,
         password: config.sql.pass,
         database: config.sql.database
-    }
+    },
+    pool: {
+        min: 0,
+        max: 4,
+        propagateCreateError: false // <- default is true, set to false
+    },
 });
 const express = require('express');
 const app = express();
 const cors = require('cors');
+const Bottleneck = require('bottleneck');
+const limiter = new Bottleneck({
+    minTime: 250,
+    maxConcurrent: 2
+});
 
 function createBlockTable() {
     return knex.schema
@@ -65,7 +75,7 @@ function createBlockTable() {
             tx.string('storageproofoutputids'); // block.transactions.storageproofoutputids
             tx.string('storageproofoutputs');   // block.transactions.storageproofoutputs*/
         })
-        .createTable('address_history', function (addr) { 
+        .createTable('address_history', function (addr) {
             addr.string('address');
             addr.string('amount');
             addr.string('tx_hash');
@@ -137,63 +147,71 @@ function getBlockInfo(spd, blockNumber) { // begin to pull data for each blockNu
 
 function getBlocks(spd, topHeight, startHeight) { // this function deserves a better name. gets block from sync, starts to process it.
     return new Promise(resolve => { // this puppy returns a promise
-        (async () => { // make everything from this point forward asynchronous 
             let blockNumber = startHeight; // we start syncing from this height (last block in sql)
             do { // do all this stuff. . .
-                console.log('Beginning processing on', blockNumber)
-                await getBlockInfo(spd, blockNumber).then((blockInfo) => { // getblockinfo, and when we g et data
+                getBlockInfo(spd, blockNumber)
+                    .then((blockInfo) => { // getblockinfo, and when we get data
+                    console.log('- - - - - - - -  - - - - - -  - - - - - - - -')
+                    console.log('processing starting on:', blockInfo.block.height);
                     let transactions = blockInfo.block.transactions; // store all the block transactions in 1 temp variable
-                    processTransaction(transactions, blockInfo.block.rawblock.timestamp, blockInfo.block.rawblock.minerpayouts); // process the tx; add to sql here.
                     let minerarbitrarydata = ''
-                    for (a=0;a<transactions.length;a++){
+                    for (a = 0; a < transactions.length; a++) {
                         if ((transactions[a].rawtransaction.arbitrarydata).length > 0) { // if arbitrary data has something
                             minerarbitrarydata = transactions[a].rawtransaction.arbitrarydata; // assume it's arbitrarydata submitted by miner
                         }
                     }
-                    addToBlocks(blockInfo.block.height, 
-                        blockInfo.block.blockid, 
-                        blockInfo.block.difficulty, 
+                    addToBlocks(blockInfo.block.height,
+                        blockInfo.block.blockid,
+                        blockInfo.block.difficulty,
                         blockInfo.block.estimatedhashrate,
-                        blockInfo.block.maturitytimestamp, 
-                        blockInfo.block.rawblock.timestamp, 
-                        blockInfo.block.rawblock.parentid, 
-                        blockInfo.block.totalcoins, 
-                        blockInfo.block.minerpayoutcount, 
+                        blockInfo.block.maturitytimestamp,
+                        blockInfo.block.rawblock.timestamp,
+                        blockInfo.block.rawblock.parentid,
+                        blockInfo.block.totalcoins,
+                        blockInfo.block.minerpayoutcount,
                         blockInfo.block.transactioncount,
-                        blockInfo.block.siacoininputcount, 
-                        blockInfo.block.siacoinoutputcount, 
-                        blockInfo.block.filecontractcount, 
+                        blockInfo.block.siacoininputcount,
+                        blockInfo.block.siacoinoutputcount,
+                        blockInfo.block.filecontractcount,
                         blockInfo.block.filecontractrevisioncount,
-                        blockInfo.block.storageproofcount, 
-                        blockInfo.block.siafundinputcount, 
-                        blockInfo.block.siafundoutputcount, 
+                        blockInfo.block.storageproofcount,
+                        blockInfo.block.siafundinputcount,
+                        blockInfo.block.siafundoutputcount,
                         blockInfo.block.minerfeecount,
-                        blockInfo.block.arbitrarydatacount, 
-                        blockInfo.block.transactionsignaturecount, 
-                        blockInfo.block.activecontractcost, 
+                        blockInfo.block.arbitrarydatacount,
+                        blockInfo.block.transactionsignaturecount,
+                        blockInfo.block.activecontractcost,
                         blockInfo.block.activecontractcount,
-                        blockInfo.block.activecontractsize, 
-                        blockInfo.block.totalcontractcost, 
-                        blockInfo.block.totalcontractsize, 
+                        blockInfo.block.activecontractsize,
+                        blockInfo.block.totalcontractcost,
+                        blockInfo.block.totalcontractsize,
                         blockInfo.block.totalrevisionvolume,
-                        minerarbitrarydata).then((added) =>{ 
-                            //console.log(added)
+                        minerarbitrarydata)
+                        .then((added) => {
+                            //console.log(' [BLOCK] Added to database on height: '+blockInfo.block.height);
+                            //console.log("block added: ", blockInfo.block.height)
+                          processTransaction(transactions, blockInfo.block.rawblock.timestamp, blockInfo.block.rawblock.minerpayouts)
+                                .then((txadded) => {
+                                //console.log(txadded);
+                                console.log('[TX]: Added all transactions for height:', blockInfo.block.height);
+                            })
                         }).catch((err) => console.log(err)); // add to block sql
                 });
                 blockNumber++; // increase block counter in do/while statement
             } while (blockNumber <= topHeight) // but only do it while blockNumber is less than or equal to our consensus height.
-        })(); // end of the async function
     })
-        .catch((error) => { 
+        .catch((error) => {
             //console.log(error) // cry about errors
-        }) 
+        })
 }
 
-function processTransaction(transactions, timestamp, minerpayouts) { // appropriately named function.
+async function processTransaction(transactions, timestamp, minerpayouts) { // appropriately named function.
+    return new Promise((resolve) => { 
     let minerFees = 0; // set minerFees to zero
     let txType = ''; // allows us to use the txType variable anywhere in this function
 
     for (t = 0; t < transactions.length; t++) { // for each transaction. . .
+        console.log('[TX] Processing transactions on height:', transactions[t].height)
         let txTotal = 0; // set the tx total sent to 0;
         if (transactions[t].rawtransaction.minerfees != undefined) { // if the tx has miner fees..
             let fee = Number(transactions[t].rawtransaction.minerfees); // make sure they're number not string
@@ -201,7 +219,7 @@ function processTransaction(transactions, timestamp, minerpayouts) { // appropri
         }
         if ((transactions[t].rawtransaction.minerfees).length === 0) { // if minerfees does not have anything in it
             minerFees = 0; // set fee to zero
-        }       
+        }
         if ((transactions[t].rawtransaction.siacoininputs).length === 0) { // if siacoinputs is empty
             txType = 'coinbase'; // assume it's a mined block with reward tx. block reward tx is 300 scp per block but goes down 0.001 per block
             if (transactions[t].height < 290000) { // so when we get to this height, there's a base of 10scp per block
@@ -211,11 +229,10 @@ function processTransaction(transactions, timestamp, minerpayouts) { // appropri
             }
             /* here we will parse minerpayouts (block reward) */
             //console.log('begin processing for '+txType+ ' transaction with hash of '+transactions[t].id);
-            for (e=0; e<minerpayouts.length; e++) {
+            for (e = 0; e < minerpayouts.length; e++) {
                 //console.log('Wallet '+minerpayouts[e].unlockhash + ' was rewarded '+ minerpayouts[e].value/scprimecoinprecision+ ' under this transaction.')
                 addToAddress(minerpayouts[e].unlockhash, minerpayouts[e].value, transactions[t].id, 'in', txType, transactions[t].height);
             }
-        
         } else { // if siacoininputs contains stuff..
             if ((transactions[t].rawtransaction.siacoinoutputs).length === 0) {
                 txType = 'hostAnn';
@@ -227,97 +244,102 @@ function processTransaction(transactions, timestamp, minerpayouts) { // appropri
             }
         }
         if (txType == 'tx') {
-
-            // console.log('------ TX INFO ------');
-            // console.log(transactions[t]);
-            //console.log('sender information: ', transactions[t].siacoininputoutputs)
-            for (q=0;q<transactions[t].siacoininputoutputs.length;q++) { 
-                //console.log('------ SENDER '+q+' INFO ------');
-                //console.log(transactions[t].siacoininputoutputs[q]);
+            /* cycle through addresses */
+            for (q = 0; q < transactions[t].siacoininputoutputs.length; q++) {
                 /* send each sender to addresses table with amount */
                 addToAddress(transactions[t].siacoininputoutputs[q].unlockhash, transactions[t].siacoininputoutputs[q].value, transactions[t].id, 'out', txType, transactions[t].height);
             }
-            for (r=0;r<transactions[t].rawtransaction.siacoinoutputs.length;r++) {
-                //console.log('------ RECEIVERS '+r+' INFO -- for tx: '+transactions[t].id+ '----')
-                //console.log(transactions[t].rawtransaction.siacoinoutputs[r]);
+            for (r = 0; r < transactions[t].rawtransaction.siacoinoutputs.length; r++) {
                 addToAddress(transactions[t].rawtransaction.siacoinoutputs[r].unlockhash, transactions[t].rawtransaction.siacoinoutputs[r].value, transactions[t].id, 'in', txType, transactions[t].height);
             }
+            
+            addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
         }
-        addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, 
-            txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000); // then add it to sql.
     }
+    async function addToTransactions(height, hash, parent, type, total, fees, timestamp, ) { // add to transactions table
+        //console.log('attempting to add tx ' + hash + ' to database as a '+type+' transaction.' );
+        return new Promise((resolve) => {
+        knex('transactions').insert({
+            block_height: height,
+            tx_hash: hash,
+            parent_block: parent,
+            tx_type: type,
+            tx_total: total,
+            fees: fees,
+            timestamp: timestamp
+        }).then((results) => {
+            resolve('Inserted');//console.log(results)
+        }).catch((error) => {
+            resolve('fail');// console.log(error)
+        })
+    })
+    }
+
+    async function addToAddress(address, amount, tx_hash, direction, type, height) {
+        return new Promise((resolve) => {
+        knex('address_history').insert({
+            address: address,
+            amount: amount,
+            tx_hash: tx_hash,
+            direction: direction,
+            type: type,
+            height: height
+        }).then((res) => {
+            resolve('Inserted');//console.log(res)
+        }).catch((err) => {
+            //console.log(err)
+        })
+    })
+    }
+    resolve('done');
+    })
+
 }
 
-function addToBlocks(height, hash, difficulty, estimatedhashrate, 
-    maturitytimestamp, timestamp, parentid, 
-    totalcoins, minerpayoutcount, transactioncount, siacoininputcount,  
-    siacoinoutputcount, filecontractcount, filecontractrevisioncount, storageproofcount, 
-    siafundinputcount, siafundoutputcount, minerfeecount, arbitrarydatacount, 
-    transactionsignaturecount, activecontractcost, activecontractcount, activecontractsize, 
-    totalcontractcost, totalcontractsize, totalrevisionvolume,minerarbitrarydata) { // appropriately named function
+async function addToBlocks(height, hash, difficulty, estimatedhashrate,
+    maturitytimestamp, timestamp, parentid,
+    totalcoins, minerpayoutcount, transactioncount, siacoininputcount,
+    siacoinoutputcount, filecontractcount, filecontractrevisioncount, storageproofcount,
+    siafundinputcount, siafundoutputcount, minerfeecount, arbitrarydatacount,
+    transactionsignaturecount, activecontractcost, activecontractcount, activecontractsize,
+    totalcontractcost, totalcontractsize, totalrevisionvolume, minerarbitrarydata) { // appropriately named function
     //console.log('attempting to add ' + height + ' to database');
-    return knex('blocks').insert({
-        height: height,
-        hash: hash,
-        difficulty: difficulty,
-        estimatedhashrate: estimatedhashrate,
-        maturitytimestamp: maturitytimestamp,
-        timestamp: timestamp,
-        parentid: parentid,
-        totalcoins: totalcoins,
-        minerpayoutcount: minerpayoutcount,
-        transactioncount: transactioncount,
-        siacoininputcount: siacoininputcount,
-        siacoinoutputcount: siacoinoutputcount,
-        filecontractcount: filecontractcount,
-        filecontractrevisioncount: filecontractrevisioncount,
-        storageproofcount: storageproofcount,
-        siafundinputcount: siafundinputcount,
-        siafundoutputcount: siafundoutputcount,
-        minerfeecount: minerfeecount,
-        arbitrarydatacount: arbitrarydatacount,
-        transactionsignaturecount: transactionsignaturecount,
-        activecontractcost: activecontractcost,
-        activecontractcount: activecontractcount,
-        activecontractsize: activecontractsize,
-        totalcontractcost: totalcontractcost,
-        totalcontractsize: totalcontractsize,
-        totalrevisionvolume: totalrevisionvolume,
-        minerarbitrarydata: minerarbitrarydata
-
-    })
-}
-
-
-function addToTransactions(height, hash, parent, type, total, fees, timestamp, ) { // add to transactions table
-    //console.log('attempting to add tx ' + hash + ' to database as a '+type+' transaction.' );
-    return knex('transactions').insert({
-        block_height: height,
-        tx_hash: hash,
-        parent_block: parent,
-        tx_type: type,
-        tx_total: total,
-        fees: fees,
-        timestamp: timestamp
-    }).then((results) => {
-        //console.log(results)
-    }).catch((error) => {
-        // console.log(error)
-    })
-}
-
-function addToAddress(address, amount, tx_hash, direction, type, height) {
-    return knex('address_history').insert({
-        address: address,
-        amount: amount,
-        tx_hash: tx_hash,
-        direction: direction,
-        type: type,
-        height: height
-    }).then((res)=> {
-        //console.log(res)
-    }).catch((err) => {
-        //console.log(err)
+    return new Promise((resolve) => {
+        return knex('blocks').insert({
+            height: height,
+            hash: hash,
+            difficulty: difficulty,
+            estimatedhashrate: estimatedhashrate,
+            maturitytimestamp: maturitytimestamp,
+            timestamp: timestamp,
+            parentid: parentid,
+            totalcoins: totalcoins,
+            minerpayoutcount: minerpayoutcount,
+            transactioncount: transactioncount,
+            siacoininputcount: siacoininputcount,
+            siacoinoutputcount: siacoinoutputcount,
+            filecontractcount: filecontractcount,
+            filecontractrevisioncount: filecontractrevisioncount,
+            storageproofcount: storageproofcount,
+            siafundinputcount: siafundinputcount,
+            siafundoutputcount: siafundoutputcount,
+            minerfeecount: minerfeecount,
+            arbitrarydatacount: arbitrarydatacount,
+            transactionsignaturecount: transactionsignaturecount,
+            activecontractcost: activecontractcost,
+            activecontractcount: activecontractcount,
+            activecontractsize: activecontractsize,
+            totalcontractcost: totalcontractcost,
+            totalcontractsize: totalcontractsize,
+            totalrevisionvolume: totalrevisionvolume,
+            minerarbitrarydata: minerarbitrarydata
+        })
+            .then((res) => {
+                resolve('true');
+            })
+            .catch((error) => {
+                throw (error);
+            })
     })
 }
 
@@ -422,33 +444,33 @@ app.get('/api/tx/:id', (req, res) => {
 /* api route for address info */
 app.get('/api/address/:addr', (req, res) => {
     getAddress(req.params.addr)
-    .then((results) => {
-        let returnArray = {
-            "address" : results[0].address,
-            "transactions": [ ],
-            "totalSCP": [ ]
-        };
-        let total = 0;
-        for (b=0;b<results.length;b++) {
-            var item = {
-                "tx_hash": results[b].tx_hash,
-                "amount": results[b].amount,
-                "direction": results[b].direction
+        .then((results) => {
+            let returnArray = {
+                "address": results[0].address,
+                "transactions": [],
+                "totalSCP": []
+            };
+            let total = 0;
+            for (b = 0; b < results.length; b++) {
+                var item = {
+                    "tx_hash": results[b].tx_hash,
+                    "amount": results[b].amount,
+                    "direction": results[b].direction
+                }
+                returnArray.transactions.push(item);
+                if (results[a].direction == "in") {
+                    total += parseInt(results[a].amount);
+                } else {
+                    total -= parseInt(results[a].amount);
+                }
+
             }
-            returnArray.transactions.push(item);
-            if (results[a].direction == "in") {
-                total += parseInt(results[a].amount);
-            } else {
-                total -= parseInt(results[a].amount);
-            }
-            
-        }
-        returnArray.totalSCP.push(total/scprimecoinprecision);
-        res.json({
-            "data": returnArray
+            returnArray.totalSCP.push(total / scprimecoinprecision);
+            res.json({
+                "data": returnArray
+            })
+
         })
-    
-})
 });
 /* api route for contract info */
 app.get('/api/contract/:contract', (req, res) => {
