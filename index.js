@@ -462,6 +462,7 @@ app.get('/api/address/:addr', (req, res) => {
                 "totalSCP": []
             };
             let total = 0;
+            console.log(results.length);
             for (b = 0; b < results.length; b++) {
                 var item = {
                     "tx_hash": results[b].tx_hash,
