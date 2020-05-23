@@ -148,7 +148,10 @@ function getBlockInfo(spd, blockNumber) { // begin to pull data for each blockNu
 function getBlocks(spd, topHeight, startHeight) { // this function deserves a better name. gets block from sync, starts to process it.
     let blockNumber = startHeight; // we start syncing from this height (last block in sql)
     (async () => {
+        let ready = '';
+
         do { // do all this stuff. . .
+            ready = false;
             await getBlockInfo(spd, blockNumber)
                 .then((blockInfo) => { // getblockinfo, and when we get data
                     console.log('- - - - - - - -  - - - - - -  - - - - - - - -')
@@ -160,8 +163,7 @@ function getBlocks(spd, topHeight, startHeight) { // this function deserves a be
                             minerarbitrarydata = transactions[a].rawtransaction.arbitrarydata; // assume it's arbitrarydata submitted by miner
                         }
                     }
-                    (async () => {
-                        await addToBlocks(blockInfo.block.height,
+                        addToBlocks(blockInfo.block.height,
                             blockInfo.block.blockid,
                             blockInfo.block.difficulty,
                             blockInfo.block.estimatedhashrate,
@@ -191,18 +193,16 @@ function getBlocks(spd, topHeight, startHeight) { // this function deserves a be
                             .then((added) => {
                                 //console.log(' [BLOCK] Added to database on height: '+blockInfo.block.height);
                                 //console.log("block added: ", blockInfo.block.height)
-                                (async () => {
-                                    await processTransaction(transactions, blockInfo.block.rawblock.timestamp, blockInfo.block.rawblock.minerpayouts)
+                                    processTransaction(transactions, blockInfo.block.rawblock.timestamp, blockInfo.block.rawblock.minerpayouts)
                                         .then((txadded) => {
                                             //console.log(txadded);
                                             console.log('[TX]: Added all transactions for height:', blockInfo.block.height);
                                         }).catch((err) => console.log(err))
-                                })();
                             }).catch((err) => console.log(err)); // add to block sql
-                    })();
                 });
             blockNumber++; // increase block counter in do/while statement
-        } while (blockNumber <= topHeight) // but only do it while blockNumber is less than or equal to our consensus height.
+            ready = true;
+        } while (ready == true) // but only do it while blockNumber is less than or equal to our consensus height.
     })();
 }
 
@@ -230,12 +230,10 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             }
             /* here we will parse minerpayouts (block reward) */
             //console.log('begin processing for '+txType+ ' transaction with hash of '+transactions[t].id);
-            (async() => { 
             for (e = 0; e < minerpayouts.length; e++) {
                 //console.log('Wallet '+minerpayouts[e].unlockhash + ' was rewarded '+ minerpayouts[e].value/scprimecoinprecision+ ' under this transaction.')
-                await addToAddress(minerpayouts[e].unlockhash, minerpayouts[e].value, transactions[t].id, 'in', txType, transactions[t].height);
+                addToAddress(minerpayouts[e].unlockhash, minerpayouts[e].value, transactions[t].id, 'in', txType, transactions[t].height);
             }
-        })();
         } else { // if siacoininputs contains stuff..
             if ((transactions[t].rawtransaction.siacoinoutputs).length === 0) {
                 txType = 'hostAnn';
@@ -248,17 +246,15 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
         }
         if (txType == 'tx') {
             /* cycle through addresses */
-            (async() => { 
             for (q = 0; q < transactions[t].siacoininputoutputs.length; q++) {
                 /* send each sender to addresses table with amount */
-                await addToAddress(transactions[t].siacoininputoutputs[q].unlockhash, transactions[t].siacoininputoutputs[q].value, transactions[t].id, 'out', txType, transactions[t].height);
+                addToAddress(transactions[t].siacoininputoutputs[q].unlockhash, transactions[t].siacoininputoutputs[q].value, transactions[t].id, 'out', txType, transactions[t].height);
             }
             for (r = 0; r < transactions[t].rawtransaction.siacoinoutputs.length; r++) {
-                await addToAddress(transactions[t].rawtransaction.siacoinoutputs[r].unlockhash, transactions[t].rawtransaction.siacoinoutputs[r].value, transactions[t].id, 'in', txType, transactions[t].height);
+                addToAddress(transactions[t].rawtransaction.siacoinoutputs[r].unlockhash, transactions[t].rawtransaction.siacoinoutputs[r].value, transactions[t].id, 'in', txType, transactions[t].height);
             }
             
-            await addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
-        })();
+            addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
         }
     }
     async function addToTransactions(height, hash, parent, type, total, fees, timestamp, ) { // add to transactions table
@@ -298,7 +294,6 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
     }
     resolve('done');
     })
-
 }
 
 async function addToBlocks(height, hash, difficulty, estimatedhashrate,
