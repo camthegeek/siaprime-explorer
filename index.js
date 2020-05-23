@@ -106,7 +106,7 @@ async function startUp() {  // the main function ran when script is started
 // fetches same blocks over and over. not sure why it happened yet.
 
 startUp(); // run the damn thing when you launch.
-setInterval(startUp, 120000); // run it every so often to catch new blocks
+setInterval(startUp, 60000); // run it every so often to catch new blocks
 
 var scprimecoinprecision = 1000000000000000000000000000;
 var baseCoinbase = 300;
@@ -139,71 +139,82 @@ function getBlockInfo(spd, blockNumber) { // begin to pull data for each blockNu
             url: '/explorer/blocks/' + number, // at this url
             method: 'GET' // make a get request
         })
-            .then((rawblock) => { // with the data we get
-                resolve(rawblock); // send it back to the function who called it, when we get the data!
-            })
+        .then((rawblock) => { // with the data we get
+            resolve(rawblock); // send it back to the function who called it, when we get the data!
+        })
     })
 }
 
-function getBlocks(spd, topHeight, startHeight) { // this function deserves a better name. gets block from sync, starts to process it.
+async function getBlocks(spd, topHeight, startHeight) { // this function deserves a better name. gets block from sync, starts to process it.
     let blockNumber = startHeight; // we start syncing from this height (last block in sql)
+    let ready = true;
     (async () => {
-        let ready = '';
-
-        do { // do all this stuff. . .
-            ready = false;
-            await getBlockInfo(spd, blockNumber)
-                .then((blockInfo) => { // getblockinfo, and when we get data
-                    console.log('- - - - - - - -  - - - - - -  - - - - - - - -')
-                    console.log('processing starting on:', blockInfo.block.height);
-                    let transactions = blockInfo.block.transactions; // store all the block transactions in 1 temp variable
-                    let minerarbitrarydata = ''
-                    for (a = 0; a < transactions.length; a++) {
-                        if ((transactions[a].rawtransaction.arbitrarydata).length > 0) { // if arbitrary data has something
-                            minerarbitrarydata = transactions[a].rawtransaction.arbitrarydata; // assume it's arbitrarydata submitted by miner
-                        }
-                    }
-                        addToBlocks(blockInfo.block.height,
-                            blockInfo.block.blockid,
-                            blockInfo.block.difficulty,
-                            blockInfo.block.estimatedhashrate,
-                            blockInfo.block.maturitytimestamp,
-                            blockInfo.block.rawblock.timestamp,
-                            blockInfo.block.rawblock.parentid,
-                            blockInfo.block.totalcoins,
-                            blockInfo.block.minerpayoutcount,
-                            blockInfo.block.transactioncount,
-                            blockInfo.block.siacoininputcount,
-                            blockInfo.block.siacoinoutputcount,
-                            blockInfo.block.filecontractcount,
-                            blockInfo.block.filecontractrevisioncount,
-                            blockInfo.block.storageproofcount,
-                            blockInfo.block.siafundinputcount,
-                            blockInfo.block.siafundoutputcount,
-                            blockInfo.block.minerfeecount,
-                            blockInfo.block.arbitrarydatacount,
-                            blockInfo.block.transactionsignaturecount,
-                            blockInfo.block.activecontractcost,
-                            blockInfo.block.activecontractcount,
-                            blockInfo.block.activecontractsize,
-                            blockInfo.block.totalcontractcost,
-                            blockInfo.block.totalcontractsize,
-                            blockInfo.block.totalrevisionvolume,
-                            minerarbitrarydata)
-                            .then((added) => {
-                                //console.log(' [BLOCK] Added to database on height: '+blockInfo.block.height);
-                                //console.log("block added: ", blockInfo.block.height)
-                                    processTransaction(transactions, blockInfo.block.rawblock.timestamp, blockInfo.block.rawblock.minerpayouts)
-                                        .then((txadded) => {
-                                            //console.log(txadded);
-                                            console.log('[TX]: Added all transactions for height:', blockInfo.block.height);
-                                        }).catch((err) => console.log(err))
-                            }).catch((err) => console.log(err)); // add to block sql
-                });
-            blockNumber++; // increase block counter in do/while statement
-            ready = true;
-        } while (ready == true) // but only do it while blockNumber is less than or equal to our consensus height.
+        try {
+        if (blockNumber < topHeight) {
+            for (i = 0; i < topHeight; i++) { // do all this stuff. . 
+                if (ready == true) {
+                    ready = false;
+                    const blockInfo = await getBlockInfo(spd, blockNumber)
+                            const parsed = await parseWholeBlock(blockInfo, blockNumber);
+                            blockNumber++
+                            ready = true;
+                }
+            }
+        }
+    } catch(error) {
+        console.log(error);
+    }
     })();
+}
+
+async function parseWholeBlock(blockInfo, height) {
+    return new Promise((resolve) => {
+        console.log('- - - - - - - -  - - - - - -  - - - - - - - -')
+        console.log('processing starting on:', blockInfo.block.height);
+        let transactions = blockInfo.block.transactions; // store all the block transactions in 1 temp variable
+        let minerarbitrarydata = ''
+        for (a = 0; a < transactions.length; a++) {
+            if ((transactions[a].rawtransaction.arbitrarydata).length > 0) { // if arbitrary data has something
+                minerarbitrarydata = transactions[a].rawtransaction.arbitrarydata; // assume it's arbitrarydata submitted by miner
+            }
+        }
+        addToBlocks(blockInfo.block.height,
+            blockInfo.block.blockid,
+            blockInfo.block.difficulty,
+            blockInfo.block.estimatedhashrate,
+            blockInfo.block.maturitytimestamp,
+            blockInfo.block.rawblock.timestamp,
+            blockInfo.block.rawblock.parentid,
+            blockInfo.block.totalcoins,
+            blockInfo.block.minerpayoutcount,
+            blockInfo.block.transactioncount,
+            blockInfo.block.siacoininputcount,
+            blockInfo.block.siacoinoutputcount,
+            blockInfo.block.filecontractcount,
+            blockInfo.block.filecontractrevisioncount,
+            blockInfo.block.storageproofcount,
+            blockInfo.block.siafundinputcount,
+            blockInfo.block.siafundoutputcount,
+            blockInfo.block.minerfeecount,
+            blockInfo.block.arbitrarydatacount,
+            blockInfo.block.transactionsignaturecount,
+            blockInfo.block.activecontractcost,
+            blockInfo.block.activecontractcount,
+            blockInfo.block.activecontractsize,
+            blockInfo.block.totalcontractcost,
+            blockInfo.block.totalcontractsize,
+            blockInfo.block.totalrevisionvolume,
+            minerarbitrarydata)
+            .then((added) => {
+                //console.log(' [BLOCK] Added to database on height: '+blockInfo.block.height);
+                processTransaction(transactions, blockInfo.block.rawblock.timestamp, blockInfo.block.rawblock.minerpayouts)
+                    .then((txadded) => {
+                        //console.log(txadded);
+                        console.log('[TX]: Added all transactions for height:', blockInfo.block.height);
+                        resolve('true');
+                    }).catch((err) => console.log(err))
+            }).catch((err) => console.log(err)); // add to block sql
+    })
 }
 
 async function processTransaction(transactions, timestamp, minerpayouts) { // appropriately named function.
