@@ -8,8 +8,8 @@ const knex = require('knex')({
         user: config.sql.user,
         password: config.sql.pass,
         database: config.sql.database
-    },
-    pool: {
+    },              // not sure we need this pool area
+    pool: {         // we need to setup tests on this soon
         min: 0,
         max: 4,
         propagateCreateError: false // <- default is true, set to false
@@ -17,9 +17,9 @@ const knex = require('knex')({
 });
 const express = require('express');
 const app = express();
-const cors = require('cors');
-const Bottleneck = require('bottleneck');
-const limiter = new Bottleneck({
+const cors = require('cors'); // I added cors just in case it's ever needed.. but thinking we don't need it, ever.
+const Bottleneck = require('bottleneck');   // pending usage. 
+const limiter = new Bottleneck({            // may be used at a later time. if not used when deployed, will be removed.
     minTime: 250,
     maxConcurrent: 2
 });
@@ -259,7 +259,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             /* cycle through addresses */
             for (q = 0; q < transactions[t].siacoininputoutputs.length; q++) {
                 /* send each sender to addresses table with amount */
-                addToAddress(transactions[t].siacoininputoutputs[q].unlockhash, transactions[t].siacoininputoutputs[q].value, transactions[t].id, 'out', txType, transactions[t].height);
+                addToAddress(transactions[t].siacoininputoutputs[q].unlockhash, '-'+transactions[t].siacoininputoutputs[q].value, transactions[t].id, 'out', txType, transactions[t].height);
             }
             for (r = 0; r < transactions[t].rawtransaction.siacoinoutputs.length; r++) {
                 addToAddress(transactions[t].rawtransaction.siacoinoutputs[r].unlockhash, transactions[t].rawtransaction.siacoinoutputs[r].value, transactions[t].id, 'in', txType, transactions[t].height);
@@ -425,6 +425,11 @@ function getAddress(address) {  // fetch the address from the database -- probab
         resolve(knex('address_history').where('address', address).select('*'));
     })
 }
+function getAllAddresses() {
+    return new Promise(resolve => {
+        resolve(knex('address_history').select('*').limit('10').groupBy('address').sum('amount as scp').orderBy('scp', 'desc'));
+    })
+}
 /* api route for tx info */
 app.get('/api/tx/:id', (req, res) => {
     getTx(req.params.id)
@@ -470,11 +475,12 @@ app.get('/api/address/:addr', (req, res) => {
                     "direction": results[b].direction
                 }
                 returnArray.transactions.push(item);
-                if (results[a].direction == "in") {
-                    total += parseInt(results[a].amount);
+                /*if (results[b].direction == "in") {
+                    total += parseInt(results[b].amount);
                 } else {
-                    total -= parseInt(results[a].amount);
-                }
+                    total -= parseInt(results[b].amount);
+                }*/
+                total += parseInt(results[b].amount);
 
             }
             returnArray.totalSCP.push(total / scprimecoinprecision);
@@ -489,4 +495,52 @@ app.get('/api/contract/:contract', (req, res) => {
     res.json({
         "test": "fail"
     });
+});
+
+/* api route for richlist lol */
+app.get('/api/richlist/:type/:amount', (req, res) => {
+    let type = req.params.type;
+    let amount = req.params.amount;
+
+    if (amount > 250) {
+        amount = 250;
+    }
+
+    switch (type) { 
+        case 'scp': 
+            // do scp things
+            getAllAddresses()
+            .then((data) => { 
+                console.log(data);
+                let returnArray = [];
+                let totalSCP;
+                for (x=0;x<data.length; x++) {
+                    /*if (data[x].direction == "in") {
+                        totalSCP += parseInt(data[x].amount);
+                    } else {
+                        totalSCP -= parseInt(data[x].amount);
+                    }*/
+                    returnArray.push({ 
+                        "address": data[x].address,
+                        "totalSCP": data[x].amount/scprimecoinprecision
+                    })
+                }
+                
+                res.json({
+                    "data": returnArray
+                });
+            })
+            
+        break;
+
+        case 'spf':
+            // do spf things
+        break;
+
+        case 'both':
+            // do both things;
+        break;
+
+    }
+
 });
