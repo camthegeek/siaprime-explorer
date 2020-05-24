@@ -57,7 +57,7 @@ function createBlockTable() {
         })
         .createTable('transactions', function (tx) {
             tx.string('block_height');  // block.height
-            tx.string('tx_hash');   // block.transactions.id
+            tx.string('tx_hash').primary();   // block.transactions.id
             tx.string('parent_block'); // block.trasactions.parent
             tx.string('tx_type');
             tx.string('tx_total');  // block.transactions.rawtransaction.siacoinoutputs
@@ -82,6 +82,8 @@ function createBlockTable() {
             addr.string('direction');
             addr.string('type');
             addr.string('height');
+            addr.index('address','address');
+            addr.index('height','height');
         })
         .then((created) => {
             console.log(created)
@@ -425,9 +427,9 @@ function getAddress(address) {  // fetch the address from the database -- probab
         resolve(knex('address_history').where('address', address).select('*'));
     })
 }
-function getAllAddresses() {
+function getAllAddresses(limit) {
     return new Promise(resolve => {
-        resolve(knex('address_history').select('*').limit('10').groupBy('address').sum('amount as scp').orderBy('scp', 'desc'));
+        resolve(knex('address_history').select('address').limit(limit).groupBy('address').sum('amount as scp').orderBy('scp', 'desc'));
     })
 }
 /* api route for tx info */
@@ -509,20 +511,14 @@ app.get('/api/richlist/:type/:amount', (req, res) => {
     switch (type) { 
         case 'scp': 
             // do scp things
-            getAllAddresses()
+            getAllAddresses(amount)
             .then((data) => { 
                 console.log(data);
                 let returnArray = [];
-                let totalSCP;
                 for (x=0;x<data.length; x++) {
-                    /*if (data[x].direction == "in") {
-                        totalSCP += parseInt(data[x].amount);
-                    } else {
-                        totalSCP -= parseInt(data[x].amount);
-                    }*/
                     returnArray.push({ 
                         "address": data[x].address,
-                        "totalSCP": data[x].amount/scprimecoinprecision
+                        "totalSCP": data[x].scp/scprimecoinprecision
                     })
                 }
                 
