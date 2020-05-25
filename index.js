@@ -56,13 +56,13 @@ function createBlockTable() {
             table.string('minerarbitrarydata'); // too lazy to fill this in --cam.
         })
         .createTable('transactions', function (tx) {
-            tx.string('block_height');  // block.height
-            tx.string('tx_hash').primary();   // block.transactions.id
-            tx.string('parent_block'); // block.trasactions.parent
-            tx.string('tx_type');
-            tx.string('tx_total');  // block.transactions.rawtransaction.siacoinoutputs
-            tx.string('fees');
-            tx.string('timestamp'); // block.rawblock.timestamp
+            tx.integer('block_height');  // block.height
+            tx.string('tx_hash', 64).primary();   // block.transactions.id
+            tx.string('parent_block', 64); // block.trasactions.parent
+            tx.string('tx_type', 10);
+            tx.bigInteger('tx_total');  // block.transactions.rawtransaction.siacoinoutputs
+            tx.bigInteger('fees');
+            tx.string('timestamp', 140); // block.rawblock.timestamp
             /*tx.string('filecontractids');  // block.transactions.filecontractids
             tx.string('filecontractmissedproofoutputids');  // block.transactions.filecontractmissedproofoutputids
             tx.string('filecontractrevisionmissedproofoutputids');  // block.transactions.filecontractrevisionmissedproofoutputids
@@ -76,14 +76,18 @@ function createBlockTable() {
             tx.string('storageproofoutputs');   // block.transactions.storageproofoutputs*/
         })
         .createTable('address_history', function (addr) {
-            addr.string('address');
-            addr.string('amount');
-            addr.string('tx_hash');
-            addr.string('direction');
-            addr.string('type');
-            addr.string('height');
-            addr.index('address','address');
-            addr.index('height','height');
+            addr.string('address', 76);
+            addr.bigInteger('amount');
+            addr.string('tx_hash', 64);
+            addr.string('direction', 4);
+            addr.string('type', 10);
+            addr.integer('height');
+            addr.index(['address','height'],'richlist');
+        })
+        .createTable('addressTotals', function (totals) {
+            totals.string('address', 76).primary();
+            totals.decimal('totalscp');
+            totals.decimal('totalspf');
         })
         .then((created) => {
             console.log(created)
@@ -99,7 +103,7 @@ async function startUp() {  // the main function ran when script is started
     } else { // if it does
         let counter = await knex('blocks').count({ height: 'height' }); // get total amount of rows from sql
         let height = JSON.parse(JSON.stringify(counter[0].height)); // parse the json, retreive height variable
-        // let height = 42; // purely for testing
+        //let height = 42; // purely for testing
         startSync(height); // start syncing from total row height (last block in sql)
     }
 }
@@ -113,20 +117,22 @@ setInterval(startUp, 60000); // run it every so often to catch new blocks
 var scprimecoinprecision = 1000000000000000000000000000;
 var baseCoinbase = 300;
 
+
 function startSync(startHeight) { // start synchronizing blocks from startHeight
     sia.connect(config.daemon.ip + ':' + config.daemon.port) // connect to daemon
         .then((spd) => { // now that we're connected.. 
             spd.call('/consensus') // get consensus data
                 .then((consensus) => { // with that data..
-                    // var topHeight = 43; // purely for testing
+                    //var topHeight = 1400; // purely for testing
                     var topHeight = consensus.height; // we want to know the current height of the blockchain
                     // console.log('startHeight: ', startHeight);
                     // console.log('topHeight: ', topHeight);
                     if ((startHeight - 1) == topHeight) { // if our startheight (minus one, because we counted all the rows and found ourselves 1 ahead of the blockchain), is equal to consensus height
                         // console.log('heights are the same, taking a break');
                         return; // lets not do a damn thing at all.
-                    }
+                    } else {
                     getBlocks(spd, topHeight, startHeight); // lets start processing the blocks starting at startHeight until we reach topHeight
+                    }
                 })
                 .catch((error) => {  // if there's an error. . . 
                     // console.log(error);  // scream about it
@@ -246,6 +252,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             for (e = 0; e < minerpayouts.length; e++) {
                 //console.log('Wallet '+minerpayouts[e].unlockhash + ' was rewarded '+ minerpayouts[e].value/scprimecoinprecision+ ' under this transaction.')
                 addToAddress(minerpayouts[e].unlockhash, minerpayouts[e].value, transactions[t].id, 'in', txType, transactions[t].height);
+                calcTotals(minerpayouts[e].unlockhash, 'in', minerpayouts[e].value, transactions[t].height, transactions[t].id);
             }
         } else { // if siacoininputs contains stuff..
             if ((transactions[t].rawtransaction.siacoinoutputs).length === 0) {
@@ -261,15 +268,22 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             /* cycle through addresses */
             for (q = 0; q < transactions[t].siacoininputoutputs.length; q++) {
                 /* send each sender to addresses table with amount */
+                //console.log('tx out: '+transactions[t].siacoininputoutputs[q].unlockhash)
                 addToAddress(transactions[t].siacoininputoutputs[q].unlockhash, '-'+transactions[t].siacoininputoutputs[q].value, transactions[t].id, 'out', txType, transactions[t].height);
+                calcTotals(transactions[t].siacoininputoutputs[q].unlockhash, 'out', transactions[t].siacoininputoutputs[q].value, transactions[t].height, transactions[t].id);
             }
             for (r = 0; r < transactions[t].rawtransaction.siacoinoutputs.length; r++) {
+                //console.log('tx in: '+transactions[t].rawtransaction.siacoinoutputs[r].unlockhash);
                 addToAddress(transactions[t].rawtransaction.siacoinoutputs[r].unlockhash, transactions[t].rawtransaction.siacoinoutputs[r].value, transactions[t].id, 'in', txType, transactions[t].height);
+                calcTotals(transactions[t].rawtransaction.siacoinoutputs[r].unlockhash, 'in',transactions[t].rawtransaction.siacoinoutputs[r].value, transactions[t].height, transactions[t].id);
             }
             
             addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
         }
     }
+
+
+
     async function addToTransactions(height, hash, parent, type, total, fees, timestamp, ) { // add to transactions table
         //console.log('attempting to add tx ' + hash + ' to database as a '+type+' transaction.' );
         return new Promise((resolve) => {
@@ -307,7 +321,48 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
     }
     resolve('done');
     })
+
+    
+    async function calcTotals(address, direction, amountscp, height, tx_hash) {
+        knex('addressTotals')
+            .select('address')
+            .where('address', address)
+            .then((success) => {
+                console.log('attempting totals: ' + address + 'balance: ' + amountscp / scprimecoinprecision)               
+                if (success.length === 0) {
+                    console.log('Address '+address+' was not found, adding')
+                    knex('addressTotals')
+                        .insert({
+                            address: address,
+                            totalscp: amountscp/scprimecoinprecision
+                        }).then((added) => {
+                            console.log('ADded '+address)
+                        })
+                }
+                if (success.length > 0) {
+                    console.log('ADdress '+address+ ' already exists, updating.')
+                    if (direction == 'in') {
+                        console.log('Incrementing '+address+' by '+amountscp/scprimecoinprecision)
+                        knex('addressTotals')
+                            .where('address', address)
+                            .increment('totalscp', amountscp/scprimecoinprecision)
+                    }
+                    if (direction == 'out') {
+                        console.log('Decreasing '+address+' by '+amountscp/scprimecoinprecision)
+                        knex('addressTotals')
+                            .where('address', address)
+                            .decrement('totalscp', amountscp/scprimecoinprecision)
+                    }
+                }
+            })
+            .catch((error) => {
+                console.log(error)
+            })
+
+    }
 }
+
+
 
 async function addToBlocks(height, hash, difficulty, estimatedhashrate,
     maturitytimestamp, timestamp, parentid,
@@ -427,9 +482,13 @@ function getAddress(address) {  // fetch the address from the database -- probab
         resolve(knex('address_history').where('address', address).select('*'));
     })
 }
-function getAllAddresses(limit) {
+
+/* this function needs to be titled generateRIchlist
+ * it pulls from table: totals
+*/
+function genRichlistSCP(limit) {
     return new Promise(resolve => {
-        resolve(knex('address_history').select('address').limit(limit).groupBy('address').sum('amount as scp').orderBy('scp', 'desc'));
+        resolve(knex('addressTotals').select('*').orderBy('totalscp', 'desc').limit(limit));
     })
 }
 /* api route for tx info */
@@ -482,10 +541,10 @@ app.get('/api/address/:addr', (req, res) => {
                 } else {
                     total -= parseInt(results[b].amount);
                 }*/
-                total += parseInt(results[b].amount);
+                total += parseInt(results[b].amount/scprimecoinprecision);
 
             }
-            returnArray.totalSCP.push(total / scprimecoinprecision);
+            returnArray.totalSCP.push(total);
             res.json({
                 "data": returnArray
             })
@@ -511,17 +570,17 @@ app.get('/api/richlist/:type/:amount', (req, res) => {
     switch (type) { 
         case 'scp': 
             // do scp things
-            getAllAddresses(amount)
+            console.log('attempting scp richlist');
+            genRichlistSCP(amount)
             .then((data) => { 
                 console.log(data);
                 let returnArray = [];
                 for (x=0;x<data.length; x++) {
                     returnArray.push({ 
                         "address": data[x].address,
-                        "totalSCP": data[x].scp/scprimecoinprecision
+                        "totalSCP": data[x].totalscp
                     })
-                }
-                
+                }                
                 res.json({
                     "data": returnArray
                 });
