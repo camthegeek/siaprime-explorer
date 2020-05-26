@@ -23,6 +23,8 @@ const limiter = new Bottleneck({            // may be used at a later time. if n
     minTime: 250,
     maxConcurrent: 2
 });
+const { attachOnDuplicateUpdate } = require('knex-on-duplicate-update');
+attachOnDuplicateUpdate();
 
 function createBlockTable() {
     return knex.schema
