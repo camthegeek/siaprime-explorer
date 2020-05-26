@@ -88,7 +88,7 @@ function createBlockTable() {
         })
         .createTable('addressTotals', function (totals) {
             totals.string('address', 76).primary();
-            totals.decimal('totalscp');
+            totals.decimal('totalscp', 15, 2);
             totals.decimal('totalspf');
         })
         .then((created) => {
@@ -118,7 +118,6 @@ setInterval(startUp, 60000); // run it every so often to catch new blocks
 
 var scprimecoinprecision = 1000000000000000000000000000;
 var baseCoinbase = 300;
-
 
 function startSync(startHeight) { // start synchronizing blocks from startHeight
     sia.connect(config.daemon.ip + ':' + config.daemon.port) // connect to daemon
@@ -253,8 +252,21 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             //console.log('begin processing for '+txType+ ' transaction with hash of '+transactions[t].id);
             for (e = 0; e < minerpayouts.length; e++) {
                 //console.log('Wallet '+minerpayouts[e].unlockhash + ' was rewarded '+ minerpayouts[e].value/scprimecoinprecision+ ' under this transaction.')
-                addToAddress(minerpayouts[e].unlockhash, minerpayouts[e].value, transactions[t].id, 'in', txType, transactions[t].height);
-                calcTotals(minerpayouts[e].unlockhash, 'in', minerpayouts[e].value, transactions[t].height, transactions[t].id);
+                let addr = minerpayouts[e].unlockhash;
+                let amt = minerpayouts[e].value;
+                let txhash = transactions[t].id;
+                let txHeight = transactions[t].height;
+                addToAddress(addr, amt, txhash, 'in', txType, txHeight)
+                .then((done) => {
+                    calcTotals(addr, 'in', amt, txHeight, txhash)
+                    .then((calc) => {
+
+                    })
+                    .catch((error) => { console.log(error);
+                    })
+                }).catch((errors) => { 
+                    console.log(errors);
+                })
             }
         } else { // if siacoininputs contains stuff..
             if ((transactions[t].rawtransaction.siacoinoutputs).length === 0) {
@@ -271,13 +283,43 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             for (q = 0; q < transactions[t].siacoininputoutputs.length; q++) {
                 /* send each sender to addresses table with amount */
                 //console.log('tx out: '+transactions[t].siacoininputoutputs[q].unlockhash)
-                addToAddress(transactions[t].siacoininputoutputs[q].unlockhash, '-'+transactions[t].siacoininputoutputs[q].value, transactions[t].id, 'out', txType, transactions[t].height);
-                calcTotals(transactions[t].siacoininputoutputs[q].unlockhash, 'out', transactions[t].siacoininputoutputs[q].value, transactions[t].height, transactions[t].id);
+                let addr = transactions[t].siacoininputoutputs[q].unlockhash;
+                let amt = transactions[t].siacoininputoutputs[q].value;
+                let txhash = transactions[t].id;
+                let txHeight = transactions[t].height;
+
+                addToAddress(addr, '-'+amt, txhash, 'out', txType, txHeight)
+                .then((done) => {
+                    calcTotals(addr, 'out', amt, txHeight, txhash)
+                    .then((calc) => {
+
+                    }).catch((error) => { 
+                        console.log(error);
+                    })
+                })
+                .catch((errors) => { 
+                    console.log(errors);
+                })
+ 
             }
             for (r = 0; r < transactions[t].rawtransaction.siacoinoutputs.length; r++) {
+                let addr = transactions[t].rawtransaction.siacoinoutputs[r].unlockhash;
+                let amt = transactions[t].rawtransaction.siacoinoutputs[r].value;
+                let txhash = transactions[t].id;
+                let txHeight = transactions[t].height;
                 //console.log('tx in: '+transactions[t].rawtransaction.siacoinoutputs[r].unlockhash);
-                addToAddress(transactions[t].rawtransaction.siacoinoutputs[r].unlockhash, transactions[t].rawtransaction.siacoinoutputs[r].value, transactions[t].id, 'in', txType, transactions[t].height);
-                calcTotals(transactions[t].rawtransaction.siacoinoutputs[r].unlockhash, 'in',transactions[t].rawtransaction.siacoinoutputs[r].value, transactions[t].height, transactions[t].id);
+                addToAddress(addr, amt, txhash, 'in', txType, txHeight)
+                .then((done) => {
+                    calcTotals(addr, 'in',amt, txHeight, txhash)
+                    .then((calc) => {
+
+                    }).catch((error) => { 
+                        console.log(error);
+                    })
+                })
+                .catch((errors) => { 
+                    console.log(errors);
+                })
             }
             
             addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
@@ -326,41 +368,58 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
 
     
     async function calcTotals(address, direction, amountscp, height, tx_hash) {
-        knex('addressTotals')
-            .select('address')
-            .where('address', address)
-            .then((success) => {
-                console.log('attempting totals: ' + address + 'balance: ' + amountscp / scprimecoinprecision)               
-                if (success.length === 0) {
-                    console.log('Address '+address+' was not found, adding')
-                    knex('addressTotals')
-                        .insert({
-                            address: address,
-                            totalscp: amountscp/scprimecoinprecision
-                        }).then((added) => {
-                            console.log('ADded '+address)
-                        })
-                }
-                if (success.length > 0) {
-                    console.log('ADdress '+address+ ' already exists, updating.')
-                    if (direction == 'in') {
-                        console.log('Incrementing '+address+' by '+amountscp/scprimecoinprecision)
+        return new Promise((resolve) => {
+            if (direction == 'out') {
+                amountscp = '-' + amountscp;
+            }
+            knex('addressTotals')
+                .select('*')
+                .where('address', address)
+                .then((success) => {
+                    //console.log('attempting totals: ' + address + 'balance: ' + amountscp / scprimecoinprecision)               
+                    if (success.length === 0) {
+                        console.log('Address ' + address + ' was not found, adding')
                         knex('addressTotals')
-                            .where('address', address)
-                            .increment('totalscp', amountscp/scprimecoinprecision)
-                    }
-                    if (direction == 'out') {
-                        console.log('Decreasing '+address+' by '+amountscp/scprimecoinprecision)
-                        knex('addressTotals')
-                            .where('address', address)
-                            .decrement('totalscp', amountscp/scprimecoinprecision)
-                    }
-                }
-            })
-            .catch((error) => {
-                console.log(error)
-            })
+                            .insert({
+                                address: address,
+                                totalscp: amountscp / scprimecoinprecision
+                            })
+                            .then((added) => {
+                                console.log('Added ' + address + ' with amount '+amountscp/scprimecoinprecision)
+                            })
+                            .catch((error) => {
+                                console.log(error)
+                            })
+                    } else {
+                        console.log('Address ' + address + ' already exists, updating.')
+                        let currentamount = success[0].totalscp;
+                        let converted = amountscp / scprimecoinprecision;
+                        if (direction == 'in') {
+                            let added = (currentamount + converted);
+                            console.log('Incrementing ' + address + ' by ' + amountscp / scprimecoinprecision)
+                            knex('addressTotals')
+                                .where('address', address)
+                                .update('totalscp', added)
+                                .then(console.log);
+                        }
+                        if (direction == 'out') {
 
+                            let removed = (currentamount + converted);
+                            console.log('Starting amount: ',currentamount);
+                            console.log('Decreasing ' + address + ' by ' + amountscp / scprimecoinprecision);
+                            console.log('new amount', removed);
+                            knex('addressTotals')
+                                .where('address', address)
+                                .update('totalscp', removed)
+                                .then(console.log);
+                        }
+                    }
+                })
+                .catch((error) => {
+                    console.log(error)
+                })
+
+        })
     }
 }
 
