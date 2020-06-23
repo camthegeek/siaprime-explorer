@@ -5,7 +5,7 @@
     },
     "sql": {
         "ip": "127.0.0.1",
-        "port": "",
+        "port": "3306",
         "user": "scp",
         "pass": "Scpr1m3!",
         "database": "scp"
