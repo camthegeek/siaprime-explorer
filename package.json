@@ -24,11 +24,14 @@
   },
   "homepage": "https://github.com/camthegeek/siaprime-explorer#readme",
   "dependencies": {
+    "@babel/runtime": "^7.10.2",
+    "bottleneck": "^2.19.5",
     "cors": "^2.8.5",
     "express": "^4.17.1",
-    "knex": "^0.20.11",
+    "knex": "^0.20.15",
+    "knex-on-duplicate-update": "^1.1.3",
     "mustache-express": "^1.3.0",
     "mysql": "^2.18.1",
-    "siaprime.js": "github:camthegeek/Nodejs-SiaPrime"
+    "siaprime.js": "github:420coupe/Nodejs-SiaPrime"
   }
 }
