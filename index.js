@@ -15,6 +15,8 @@ const knex = require('knex')({
         propagateCreateError: false // <- default is true, set to false
     },
 });
+const {attachOnDuplicateUpdate} = require('knex-on-duplicate-update'); 
+attachOnDuplicateUpdate();
 const express = require('express');
 const app = express();
 const cors = require('cors'); // I added cors just in case it's ever needed.. but thinking we don't need it, ever.
@@ -23,8 +25,6 @@ const limiter = new Bottleneck({            // may be used at a later time. if n
     minTime: 250,
     maxConcurrent: 2
 });
-const { attachOnDuplicateUpdate } = require('knex-on-duplicate-update');
-attachOnDuplicateUpdate();
 
 function createBlockTable() {
     return knex.schema
