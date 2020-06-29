@@ -11,7 +11,7 @@ const knex = require('knex')({
     },              // not sure we need this pool area
     pool: {         // we need to setup tests on this soon
         min: 0,
-        max: 4,
+        max: 25,
         propagateCreateError: false // <- default is true, set to false
     },
 });
@@ -29,33 +29,33 @@ const limiter = new Bottleneck({            // may be used at a later time. if n
 function createBlockTable() {
     return knex.schema
         .createTable('blocks', function (table) {
-            table.string('height').primary();   // block.height
-            table.string('hash');   // block.blockid
-            table.string('difficulty'); // block.difficulty
-            table.string('estimatedhashrate');  // block.estimatedhashrate
-            table.string('maturitytimestamp');  // block.maturitytimestamp
-            table.string('timestamp');  // block.rawblock.timestamp
-            table.string('parentid');   // block.rawblock.parentid
-            table.string('totalcoins'); // block.totalcoins
-            table.string('minerpayoutcount');   // block.minerpayoutcount
-            table.string('transactioncount');   // block.transactioncount
-            table.string('siacoininputcount');  // block.siacoininputcount
-            table.string('siacoinoutputcount'); // block.siacoinoutputcount
-            table.string('filecontractcount');  // block.filecontractcount
-            table.string('filecontractrevisioncount');  // block.filecontractrevisioncount
-            table.string('storageproofcount');  // block.storageproofcount
-            table.string('siafundinputcount');  // block.siafundinputcount
-            table.string('siafundoutputcount'); // block.siafundoutputcount
-            table.string('minerfeecount');  // block.minerfeecount
-            table.string('arbitrarydatacount'); // block.arbitrarydatacount
-            table.string('transactionsignaturecount');  // block.transactionsiganturecount
-            table.string('activecontractcost'); // block.activecontractcost
-            table.string('activecontractcount'); // block.activecontractcount
-            table.string('activecontractsize'); // block.activecontractsize
-            table.string('totalcontractcost');  // block.totalcontractcost
-            table.string('totalcontractsize');  // block.totalcontractsize
-            table.string('totalrevisionvolume');    // block.totalrevisionvolume
-            table.string('minerarbitrarydata'); // too lazy to fill this in --cam.
+            table.integer('height').primary();   // block.height
+            table.string('hash', 64);   // block.blockid
+            table.decimal('difficulty', 30, 0); // block.difficulty
+            table.decimal('estimatedhashrate', 30, 0);  // block.estimatedhashrate
+            table.bigInteger('maturitytimestamp');  // block.maturitytimestamp
+            table.bigInteger('timestamp');  // block.rawblock.timestamp
+            table.string('parentid', 64);   // block.rawblock.parentid
+            table.decimal('totalcoins', 36, 0); // block.totalcoins
+            table.integer('minerpayoutcount');   // block.minerpayoutcount
+            table.integer('transactioncount');   // block.transactioncount
+            table.integer('siacoininputcount');  // block.siacoininputcount
+            table.integer('siacoinoutputcount'); // block.siacoinoutputcount
+            table.integer('filecontractcount');  // block.filecontractcount
+            table.integer('filecontractrevisioncount');  // block.filecontractrevisioncount
+            table.integer('storageproofcount');  // block.storageproofcount
+            table.integer('siafundinputcount');  // block.siafundinputcount
+            table.integer('siafundoutputcount'); // block.siafundoutputcount
+            table.decimal('minerfeecount', 36, 0);  // block.minerfeecount
+            table.integer('arbitrarydatacount'); // block.arbitrarydatacount
+            table.integer('transactionsignaturecount');  // block.transactionsiganturecount
+            table.decimal('activecontractcost', 36, 0); // block.activecontractcost
+            table.integer('activecontractcount'); // block.activecontractcount
+            table.decimal('activecontractsize', 30, 0); // block.activecontractsize
+            table.decimal('totalcontractcost', 36, 0);  // block.totalcontractcost
+            table.decimal('totalcontractsize', 30, 0);  // block.totalcontractsize
+            table.bigInteger('totalrevisionvolume');    // block.totalrevisionvolume
+            table.string('minerarbitrarydata'); // too lazy to fill this in --cam 
         })
         .createTable('transactions', function (tx) {
             tx.integer('block_height');  // block.height
@@ -63,8 +63,8 @@ function createBlockTable() {
             tx.string('parent_block', 64); // block.trasactions.parent
             tx.string('tx_type', 10);
             tx.bigInteger('tx_total');  // block.transactions.rawtransaction.siacoinoutputs
-            tx.bigInteger('fees');
-            tx.string('timestamp', 140); // block.rawblock.timestamp
+            tx.decimal('fees', 36, 0);
+            tx.bigInteger('timestamp'); // block.rawblock.timestamp
             /*tx.string('filecontractids');  // block.transactions.filecontractids
             tx.string('filecontractmissedproofoutputids');  // block.transactions.filecontractmissedproofoutputids
             tx.string('filecontractrevisionmissedproofoutputids');  // block.transactions.filecontractrevisionmissedproofoutputids
@@ -79,7 +79,7 @@ function createBlockTable() {
         })
         .createTable('address_history', function (addr) {
             addr.string('address', 76);
-            addr.bigInteger('amount');
+            addr.decimal('amount', 36, 0);
             addr.string('tx_hash', 64);
             addr.string('direction', 4);
             addr.string('type', 10);
@@ -88,8 +88,8 @@ function createBlockTable() {
         })
         .createTable('addressTotals', function (totals) {
             totals.string('address', 76).primary();
-            totals.decimal('totalscp', 15, 2);
-            totals.decimal('totalspf');
+            totals.decimal('totalscp', 36, 0);
+            totals.integer('totalspf');
         })
         .then((created) => {
             console.log(created)
@@ -129,14 +129,14 @@ function startSync(startHeight) { // start synchronizing blocks from startHeight
                     // console.log('startHeight: ', startHeight);
                     // console.log('topHeight: ', topHeight);
                     if ((startHeight - 1) == topHeight) { // if our startheight (minus one, because we counted all the rows and found ourselves 1 ahead of the blockchain), is equal to consensus height
-                        // console.log('heights are the same, taking a break');
+                        console.log('heights are the same, taking a break');
                         return; // lets not do a damn thing at all.
                     } else {
                     getBlocks(spd, topHeight, startHeight); // lets start processing the blocks starting at startHeight until we reach topHeight
                     }
                 })
                 .catch((error) => {  // if there's an error. . . 
-                    // console.log(error);  // scream about it
+                    console.log(error);  // scream about it
                 })
         })
 }
@@ -340,8 +340,10 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             fees: fees,
             timestamp: timestamp
         }).then((results) => {
+	    console.log(results);
             resolve('Inserted');//console.log(results)
         }).catch((error) => {
+	    console.log(error);
             resolve('fail');// console.log(error)
         })
     })
@@ -357,9 +359,10 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             type: type,
             height: height
         }).then((res) => {
+	    console.log(res);
             resolve('Inserted');//console.log(res)
         }).catch((err) => {
-            //console.log(err)
+            console.log(err);
         })
     })
     }
@@ -376,7 +379,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 .select('*')
                 .where('address', address)
                 .then((success) => {
-                    //console.log('attempting totals: ' + address + 'balance: ' + amountscp / scprimecoinprecision)               
+                    console.log('attempting totals: ' + address + 'balance: ' + amountscp / scprimecoinprecision)               
                     if (success.length === 0) {
                         console.log('Address ' + address + ' was not found, adding')
                         knex('addressTotals')
@@ -385,10 +388,10 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                                 totalscp: amountscp / scprimecoinprecision
                             })
                             .then((added) => {
-                                console.log('Added ' + address + ' with amount '+amountscp/scprimecoinprecision)
+                                console.log('Added ' + address + ' with amount '+amountscp/scprimecoinprecision);
                             })
                             .catch((error) => {
-                                console.log(error)
+                                console.log(error);
                             })
                     } else {
                         console.log('Address ' + address + ' already exists, updating.')
@@ -396,7 +399,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                         let converted = amountscp / scprimecoinprecision;
                         if (direction == 'in') {
                             let added = (currentamount + converted);
-                            console.log('Incrementing ' + address + ' by ' + amountscp / scprimecoinprecision)
+                            console.log('Incrementing ' + address + ' by ' + amountscp / scprimecoinprecision);
                             knex('addressTotals')
                                 .where('address', address)
                                 .update('totalscp', added)
@@ -405,7 +408,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                         if (direction == 'out') {
 
                             let removed = (currentamount + converted);
-                            console.log('Starting amount: ',currentamount);
+                            console.log('Starting amount: ', currentamount);
                             console.log('Decreasing ' + address + ' by ' + amountscp / scprimecoinprecision);
                             console.log('new amount', removed);
                             knex('addressTotals')
@@ -581,8 +584,10 @@ app.get('/api/tx/:id', (req, res) => {
 });
 /* api route for address info */
 app.get('/api/address/:addr', (req, res) => {
+    console.log(req.params.addr); // let's see wtf is being req
     getAddress(req.params.addr)
         .then((results) => {
+	    console.log(results);
             let returnArray = {
                 "address": results[0].address,
                 "transactions": [],
@@ -611,6 +616,10 @@ app.get('/api/address/:addr', (req, res) => {
             })
 
         })
+	.catch((error) => {
+	console.log(error)
+	})
+
 });
 /* api route for contract info */
 app.get('/api/contract/:contract', (req, res) => {
