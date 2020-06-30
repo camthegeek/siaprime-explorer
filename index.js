@@ -270,12 +270,14 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 let txHeight = transactions[t].height;
                 addToAddress(addr, amt, txhash, 'in', txType, txHeight)
                 .then((done) => {
-                    calcTotals(addr, 'in', amt, txHeight, txhash)
+                    (async() => { 
+                    await calcTotals(addr, 'in', amt, txHeight, txhash)
                     .then((calc) => {
 
                     })
                     .catch((error) => { console.log(error);
                     })
+                })
                 }).catch((errors) => { 
                     console.log(errors);
                 })
@@ -313,17 +315,18 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
 
                 addToAddress(addr, '-'+amt, txhash, 'out', txType, txHeight)
                 .then((done) => {
-                    calcTotals(addr, 'out', amt, txHeight, txhash)
+                    (async() => { 
+                    await calcTotals(addr, 'out', amt, txHeight, txhash)
                     .then((calc) => {
 
                     }).catch((error) => { 
                         console.log(error);
                     })
                 })
+            })
                 .catch((errors) => { 
                     console.log(errors);
                 })
- 
             }
 
             /*  we COULD technically use a function to do this so we're not copy/pasting code 3 times
@@ -346,12 +349,14 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
 
                 addToAddress(addr, amt, txhash, 'in', txType, txHeight)
                 .then((done) => {
-                   calcTotals(addr, 'in',amt, txHeight, txhash)
+                    (async() => { 
+                    await calcTotals(addr, 'in',amt, txHeight, txhash)
                     .then((calc) => {
 
                     }).catch((error) => {
                         console.log(error);
                     })
+                })
                 })
                 .catch((errors) => { 
                     console.log(errors);
