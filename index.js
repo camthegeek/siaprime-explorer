@@ -400,7 +400,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             type: type,
             height: height
         }).then((res) => {
-	    console.log(res);
+	        //console.log(res);
             resolve('Inserted');//console.log(res)
         }).catch((err) => {
             console.log(err);
@@ -443,8 +443,8 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                             console.log('Incrementing ' + address + ' by ' + amountscp / scprimecoinprecision);
                             knex('addressTotals')
                                 .where('address', address)
-                                .update('totalscp', added)
-                                .then(console.log);
+                                .update('totalscp', added);
+                                //.then(console.log);
                         }
                         if (direction == 'out') {
 
