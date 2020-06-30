@@ -250,10 +250,22 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             }
             /* here we will parse minerpayouts (block reward) */
             //console.log('begin processing for '+txType+ ' transaction with hash of '+transactions[t].id);
-            for (e = 0; e < minerpayouts.length; e++) {
+            /*  we COULD technically use a function to do this so we're not copy/pasting code 3 times
+                but this block pretty much checks the json data for each address and sums up the total per address in the transaction.
+                we don't need EVERY SINGLE CHANGE stored in sql. Just the change per tx
+            */
+            let minerpayouts_merged = Object.values(minerpayouts.reduce((cam, {unlockhash,value}) => {
+                cam[unlockhash] = cam[unlockhash] || {unlockhash,total: 0} ;
+                if (unlockhash == cam[unlockhash].unlockhash) {
+                    cam[unlockhash].total += parseInt(value);
+                } 
+                return cam;
+              }, {}));
+
+            for (e = 0; e < minerpayouts_merged.length; e++) {
                 //console.log('Wallet '+minerpayouts[e].unlockhash + ' was rewarded '+ minerpayouts[e].value/scprimecoinprecision+ ' under this transaction.')
-                let addr = minerpayouts[e].unlockhash;
-                let amt = minerpayouts[e].value;
+                let addr = minerpayouts_merged[e].unlockhash;
+                let amt = minerpayouts_merged[e].total;
                 let txhash = transactions[t].id;
                 let txHeight = transactions[t].height;
                 addToAddress(addr, amt, txhash, 'in', txType, txHeight)
@@ -280,11 +292,22 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
         }
         if (txType == 'tx') {
             /* cycle through addresses */
-            for (q = 0; q < transactions[t].siacoininputoutputs.length; q++) {
+            /*  we COULD technically use a function to do this so we're not copy/pasting code 3 times
+                but this block pretty much checks the json data for each address and sums up the total per address in the transaction.
+                we don't need EVERY SINGLE CHANGE stored in sql. Just the change per tx
+            */
+            let inputoutputsjson = transactions[t].siacoininputoutputs;
+            let siacoininputoutputs = Object.values(inputoutputsjson.reduce((cam, {unlockhash,value}) => {
+                cam[unlockhash] = cam[unlockhash] || {unlockhash,total: 0} ;
+                if (unlockhash == cam[unlockhash].unlockhash) {
+                    cam[unlockhash].total += parseInt(value);
+                } 
+                return cam;
+              }, {}));
+            for (q = 0; q < siacoininputoutputs.length; q++) {
                 /* send each sender to addresses table with amount */
-                //console.log('tx out: '+transactions[t].siacoininputoutputs[q].unlockhash)
-                let addr = transactions[t].siacoininputoutputs[q].unlockhash;
-                let amt = transactions[t].siacoininputoutputs[q].value;
+                let addr = siacoininputoutputs[q].unlockhash;
+                let amt = siacoininputoutputs[q].total;
                 let txhash = transactions[t].id;
                 let txHeight = transactions[t].height;
 
@@ -302,18 +325,31 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 })
  
             }
-            for (r = 0; r < transactions[t].rawtransaction.siacoinoutputs.length; r++) {
-                let addr = transactions[t].rawtransaction.siacoinoutputs[r].unlockhash;
-                let amt = transactions[t].rawtransaction.siacoinoutputs[r].value;
+
+            /*  we COULD technically use a function to do this so we're not copy/pasting code 3 times
+                but this block pretty much checks the json data for each address and sums up the total per address in the transaction.
+                we don't need EVERY SINGLE CHANGE stored in sql. Just the change per tx
+            */
+            let siacoinoutputsjson = transactions[t].rawtransaction.siacoinoutputs;
+            let siacoinoutputs = Object.values(siacoinoutputsjson.reduce((cam, {unlockhash,value}) => {
+                cam[unlockhash] = cam[unlockhash] || {unlockhash,total: 0} ;
+                if (unlockhash == cam[unlockhash].unlockhash) {
+                    cam[unlockhash].total += parseInt(value);
+                } 
+                return cam;
+            }, {}));
+            for (r = 0; r < siacoinoutputs.length; r++) {
+                let addr = siacoinoutputs[r].unlockhash;
+                let amt = siacoinoutputs[r].total;
                 let txhash = transactions[t].id;
                 let txHeight = transactions[t].height;
-                //console.log('tx in: '+transactions[t].rawtransaction.siacoinoutputs[r].unlockhash);
+
                 addToAddress(addr, amt, txhash, 'in', txType, txHeight)
                 .then((done) => {
-                    calcTotals(addr, 'in',amt, txHeight, txhash)
+                   calcTotals(addr, 'in',amt, txHeight, txhash)
                     .then((calc) => {
 
-                    }).catch((error) => { 
+                    }).catch((error) => {
                         console.log(error);
                     })
                 })
