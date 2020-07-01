@@ -567,6 +567,11 @@ function getAddress(address) {  // fetch the address from the database -- probab
     })
 }
 
+function getAddressTotal(address) {  // fetch the address from the database -- probably will return more than one result.
+    return new Promise(resolve => {
+        resolve(knex('address_totals').where('address', address).select('*'));
+    })
+}
 /* this function needs to be titled generateRIchlist
  * it pulls from table: totals
 */
@@ -641,6 +646,15 @@ app.get('/api/address/:addr', (req, res) => {
 	})
 
 });
+/* api route for address total; one address only. */
+app.get('/api/total/:addr', (req, res) => { 
+    getAddressTotal(req.params.addr)
+    .then((data) => {
+        console.log(data);
+        res.send(data);
+    })
+})
+
 /* api route for contract info */
 app.get('/api/contract/:contract', (req, res) => {
     res.json({
