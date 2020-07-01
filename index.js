@@ -269,17 +269,11 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 let txHeight = transactions[t].height;
                 addToAddress(addr, amt, txhash, 'in', txType, txHeight)
                 .then((done) => {
-                    (async() => { 
-                    await calcTotals(addr, 'in', amt, txHeight, txhash)
-                    .then((calc) => {
-
-                    })
-                    .catch((error) => { console.log(error);
-                    })
-                })
+                    // likely do not need this.
                 }).catch((errors) => { 
                     console.log(errors);
                 })
+                let totals = await calcTotals(addr, 'in', amt, txHeight, txhash);
             }
         } else { // if siacoininputs contains stuff..
             if ((transactions[t].rawtransaction.siacoinoutputs).length === 0) {
@@ -314,18 +308,11 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
 
                 addToAddress(addr, '-'+amt, txhash, 'out', txType, txHeight)
                 .then((done) => {
-                    (async() => { 
-                    await calcTotals(addr, 'out', amt, txHeight, txhash)
-                    .then((calc) => {
-
-                    }).catch((error) => { 
-                        console.log(error);
-                    })
-                })
-            })
-                .catch((errors) => { 
+                    // likely do not need this.
+                }).catch((errors) => { 
                     console.log(errors);
                 })
+                let totals = await calcTotals(addr, 'out', amt, txHeight, txhash);
             }
 
             /*  we COULD technically use a function to do this so we're not copy/pasting code 3 times
@@ -348,18 +335,11 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
 
                 addToAddress(addr, amt, txhash, 'in', txType, txHeight)
                 .then((done) => {
-                    (async() => { 
-                    await calcTotals(addr, 'in',amt, txHeight, txhash)
-                    .then((calc) => {
-
-                    }).catch((error) => {
-                        console.log(error);
-                    })
-                })
-                })
-                .catch((errors) => { 
+                    // likely do not need this.
+                }).catch((errors) => { 
                     console.log(errors);
                 })
+                let totals = await calcTotals(addr, 'in',amt, txHeight, txhash);
             }
             
             addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
