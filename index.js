@@ -86,7 +86,7 @@ function createBlockTable() {
             addr.integer('height');
             addr.index(['address','height'],'richlist');
         })
-        .createTable('addressTotals', function (totals) {
+        .createTable('address_totals', function (totals) {
             totals.string('address', 76).primary();
             totals.decimal('totalscp', 36, 0);
             totals.integer('totalspf');
@@ -395,14 +395,14 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             if (direction == 'out') {
                 amountscp = '-' + amountscp;
             }
-            knex('addressTotals')
+            knex('address_totals')
                 .select('*')
                 .where('address', address)
                 .then((success) => {
                     console.log('attempting totals: ' + address + 'balance: ' + amountscp / scprimecoinprecision)               
                     if (success.length === 0) {
                         console.log('Address ' + address + ' was not found, adding')
-                        knex('addressTotals')
+                        knex('address_totals')
                             .insert({
                                 address: address,
                                 totalscp: amountscp / scprimecoinprecision
@@ -420,7 +420,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                         if (direction == 'in') {
                             let added = (currentamount + converted);
                             console.log('Incrementing ' + address + ' by ' + amountscp / scprimecoinprecision);
-                            knex('addressTotals')
+                            knex('address_totals')
                                 .where('address', address)
                                 .update('totalscp', added);
                                 //.then(console.log);
@@ -431,7 +431,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                             console.log('Starting amount: ', currentamount);
                             console.log('Decreasing ' + address + ' by ' + amountscp / scprimecoinprecision);
                             console.log('new amount', removed);
-                            knex('addressTotals')
+                            knex('address_totals')
                                 .where('address', address)
                                 .update('totalscp', removed)
                                 .then(console.log);
@@ -572,7 +572,7 @@ function getAddress(address) {  // fetch the address from the database -- probab
 */
 function genRichlistSCP(limit) {
     return new Promise(resolve => {
-        resolve(knex('addressTotals').select('*').orderBy('totalscp', 'desc').limit(limit));
+        resolve(knex('address_totals').select('*').orderBy('totalscp', 'desc').limit(limit));
     })
 }
 /* api route for tx info */
