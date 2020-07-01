@@ -627,12 +627,12 @@ app.get('/api/address/:addr', (req, res) => {
                     "direction": results[b].direction
                 }
                 returnArray.transactions.push(item);
-                /*if (results[b].direction == "in") {
+                if (results[b].direction == "in") {
                     total += parseInt(results[b].amount);
                 } else {
                     total -= parseInt(results[b].amount);
-                }*/
-                total += parseInt(results[b].amount/scprimecoinprecision);
+                }
+                //total += parseInt(results[b].amount/scprimecoinprecision);
 
             }
             returnArray.totalSCP.push(total);
