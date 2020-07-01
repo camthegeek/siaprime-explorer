@@ -114,7 +114,7 @@ async function startUp() {  // the main function ran when script is started
 // fetches same blocks over and over. not sure why it happened yet.
 
 startUp(); // run the damn thing when you launch.
-setInterval(startUp, 60000); // run it every so often to catch new blocks
+//setInterval(startUp, 60000); // run it every so often to catch new blocks
 
 var scprimecoinprecision = 1000000000000000000000000000;
 var baseCoinbase = 300;
