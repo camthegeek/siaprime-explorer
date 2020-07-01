@@ -227,7 +227,6 @@ async function parseWholeBlock(blockInfo, height) {
 }
 
 async function processTransaction(transactions, timestamp, minerpayouts) { // appropriately named function.
-    return new Promise((resolve) => { 
     let minerFees = 0; // set minerFees to zero
     let txType = ''; // allows us to use the txType variable anywhere in this function
 
@@ -408,7 +407,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
     })
     }
     resolve('done');
-    })
+
 
     
     async function calcTotals(address, direction, amountscp, height, tx_hash) {
