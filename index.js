@@ -392,9 +392,9 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
     
     async function calcTotals(address, direction, amountscp, height, tx_hash) {
         return new Promise((resolve) => {
-            if (direction == 'out') {
+            /*if (direction == 'out') {
                 amountscp = '-' + amountscp;
-            }
+            }*/
             knex('address_totals')
                 .select('*')
                 .where('address', address)
@@ -426,8 +426,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                                 //.then(console.log);
                         }
                         if (direction == 'out') {
-
-                            let removed = (currentamount + converted);
+                            let removed = currentamount - converted;
                             console.log('Starting amount: ', currentamount);
                             console.log('Decreasing ' + address + ' by ' + amountscp / scprimecoinprecision);
                             console.log('new amount', removed);
