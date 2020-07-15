@@ -116,7 +116,7 @@ async function startUp() {  // the main function ran when script is started
 startUp(); // run the damn thing when you launch.
 //setInterval(startUp, 60000); // run it every so often to catch new blocks
 
-var scprimecoinprecision = 1000000000000000000000000000;
+var scprimecoinprecision = config.general.precision;;
 var baseCoinbase = 300;
 
 function startSync(startHeight) { // start synchronizing blocks from startHeight
