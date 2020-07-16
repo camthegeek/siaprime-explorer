@@ -1,4 +1,5 @@
 const config = require('../config.json');
+const sia = require('siaprime.js');
 const mysql = require('mysql');
 const knex = require('knex')({
     client: 'mysql',
@@ -50,10 +51,34 @@ function getInfoBlock(id) { // this gets info on a block hash or height based on
     })
 }
 
+async function getTopBlock() {
+    return new Promise((resolve) => { 
+    sia.connect(config.daemon.ip + ':' + config.daemon.port) // connect to daemon
+        .then((spd) => { // now that we're connected.. 
+        spd.call('/consensus') // get consensus data
+        .then((consensus) => { // with that data..
+            //var topHeight = 100; // purely for testing
+            resolve(consensus.height); // we send the current height of the blockchain
+        })
+    })
+})
+}
+
+async function getLastIndexed() {
+    let counter = await knex('blocks').count({ height: 'height' }); // get total amount of rows from sql
+    let height = JSON.parse(JSON.stringify(counter[0].height)); // parse the json, retreive height variable
+    return new Promise((resolve) => { 
+    console.log(height);
+    resolve(height);
+})
+}
+
 module.exports = {
     getTx,
     getAddress,
     getAddressTotal,
     genRichlistSCP,
-    getInfoBlock
+    getInfoBlock,
+    getTopBlock,
+    getLastIndexed
 }

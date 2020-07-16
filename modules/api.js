@@ -150,8 +150,15 @@ app.get('/api/richlist/:type/:amount', (req, res) => {
 
 });
 
-app.get('/api/health', (req, res) => {
-    res.send('alive');
+app.get('/api/health', async (req, res) => {
+    let last_indexed = await support.getLastIndexed();
+    let current_height = await support.getTopBlock();
+    console.log(current_height);
+    res.send({
+        "current_block": current_height, // this gets last block from spd
+        "last_indexed": last_indexed, // this gets last block for sql 
+
+    });
 })
 
 /* when a user navigates to site.tld/ */
@@ -195,3 +202,4 @@ app.get('/api/block/:id', (req, res) => {
         });
     })
 })
+//};
