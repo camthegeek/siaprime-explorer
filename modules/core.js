@@ -15,7 +15,7 @@ const knex = require('knex')({
         propagateCreateError: false // <- default is true, set to false
     },
 });
-const {attachOnDuplicateUpdate} = require('knex-on-duplicate-update'); 
+const { attachOnDuplicateUpdate } = require('knex-on-duplicate-update');
 attachOnDuplicateUpdate();
 const cors = require('cors'); // I added cors just in case it's ever needed.. but thinking we don't need it, ever.
 
@@ -77,7 +77,7 @@ function createBlockTable() {
             addr.string('direction', 4);
             addr.string('type', 10);
             addr.integer('height');
-            addr.index(['address','height'],'richlist');
+            addr.index(['address', 'height'], 'richlist');
         })
         .createTable('address_totals', function (totals) {
             totals.string('address', 76).primary();
@@ -122,7 +122,7 @@ function startSync(startHeight) { // start synchronizing blocks from startHeight
                         console.log('heights are the same, taking a break');
 
                         setTimeout(startUp, 60000); // run startUp once if heights ~1 block difference or even. startUp loops back around to startSync..
-                        
+
                         //return; // lets not do a damn thing at all.
                     } else {
                         getBlocks(spd, topHeight, startHeight); // lets start processing the blocks starting at startHeight until we reach topHeight
@@ -141,9 +141,9 @@ function getBlockInfo(spd, blockNumber) { // begin to pull data for each blockNu
             url: '/explorer/blocks/' + number, // at this url
             method: 'GET' // make a get request
         })
-        .then((rawblock) => { // with the data we get
-            resolve(rawblock); // send it back to the function who called it, when we get the data!
-        })
+            .then((rawblock) => { // with the data we get
+                resolve(rawblock); // send it back to the function who called it, when we get the data!
+            })
     })
 }
 
@@ -152,20 +152,20 @@ async function getBlocks(spd, topHeight, startHeight) { // this function deserve
     let ready = true;
     (async () => {
         try {
-        if (blockNumber < topHeight) {
-            for (i = 0; i < topHeight; i++) { // do all this stuff. . 
-                if (ready == true) {
-                    ready = false;
-                    const blockInfo = await getBlockInfo(spd, blockNumber)
-                            const parsed = await parseWholeBlock(blockInfo, blockNumber);
-                            blockNumber++
-                            ready = true;
+            if (blockNumber < topHeight) {
+                for (i = 0; i < topHeight; i++) { // do all this stuff. . 
+                    if (ready == true) {
+                        ready = false;
+                        const blockInfo = await getBlockInfo(spd, blockNumber)
+                        const parsed = await parseWholeBlock(blockInfo, blockNumber);
+                        blockNumber++
+                        ready = true;
+                    }
                 }
             }
+        } catch (error) {
+            console.log(error);
         }
-    } catch(error) {
-        console.log(error);
-    }
     })();
 }
 
@@ -246,13 +246,13 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 but this block pretty much checks the json data for each address and sums up the total per address in the transaction.
                 we don't need EVERY SINGLE CHANGE stored in sql. Just the change per tx
             */
-            let minerpayouts_merged = Object.values(minerpayouts.reduce((cam, {unlockhash,value}) => {
-                cam[unlockhash] = cam[unlockhash] || {unlockhash,total: 0} ;
+            let minerpayouts_merged = Object.values(minerpayouts.reduce((cam, { unlockhash, value }) => {
+                cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
                 if (unlockhash == cam[unlockhash].unlockhash) {
                     cam[unlockhash].total += parseInt(value);
-                } 
+                }
                 return cam;
-              }, {}));
+            }, {}));
 
             for (e = 0; e < minerpayouts_merged.length; e++) {
                 //console.log('Wallet '+minerpayouts[e].unlockhash + ' was rewarded '+ minerpayouts[e].value/scprimecoinprecision+ ' under this transaction.')
@@ -261,12 +261,12 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 let txhash = transactions[t].id;
                 let txHeight = transactions[t].height;
                 addToAddress(addr, amt, txhash, 'in', txType, txHeight)
-                .then((done) => {
-                    
-                })
-                .catch((errors) => { 
-                    console.log(errors);
-                });
+                    .then((done) => {
+
+                    })
+                    .catch((errors) => {
+                        console.log(errors);
+                    });
                 let totals3 = await calcTotals(addr, 'in', amt, txHeight, txhash);
             }
         } else { // if siacoininputs contains stuff..
@@ -286,13 +286,13 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 we don't need EVERY SINGLE CHANGE stored in sql. Just the change per tx
             */
             let inputoutputsjson = transactions[t].siacoininputoutputs;
-            let siacoininputoutputs = Object.values(inputoutputsjson.reduce((cam, {unlockhash,value}) => {
-                cam[unlockhash] = cam[unlockhash] || {unlockhash,total: 0} ;
+            let siacoininputoutputs = Object.values(inputoutputsjson.reduce((cam, { unlockhash, value }) => {
+                cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
                 if (unlockhash == cam[unlockhash].unlockhash) {
                     cam[unlockhash].total += parseInt(value);
-                } 
+                }
                 return cam;
-              }, {}));
+            }, {}));
             for (q = 0; q < siacoininputoutputs.length; q++) {
                 /* send each sender to addresses table with amount */
                 let addr = siacoininputoutputs[q].unlockhash;
@@ -300,13 +300,13 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 let txhash = transactions[t].id;
                 let txHeight = transactions[t].height;
 
-                addToAddress(addr, '-'+amt, txhash, 'out', txType, txHeight)
-                .then((done) => {
-                // do something
-                })
-                .catch((errors) => { 
-                    console.log(errors);
-                });
+                addToAddress(addr, '-' + amt, txhash, 'out', txType, txHeight)
+                    .then((done) => {
+                        // do something
+                    })
+                    .catch((errors) => {
+                        console.log(errors);
+                    });
                 let totals2 = await calcTotals(addr, 'out', amt, txHeight, txhash);
             }
 
@@ -315,11 +315,11 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 we don't need EVERY SINGLE CHANGE stored in sql. Just the change per tx
             */
             let siacoinoutputsjson = transactions[t].rawtransaction.siacoinoutputs;
-            let siacoinoutputs = Object.values(siacoinoutputsjson.reduce((cam, {unlockhash,value}) => {
-                cam[unlockhash] = cam[unlockhash] || {unlockhash,total: 0} ;
+            let siacoinoutputs = Object.values(siacoinoutputsjson.reduce((cam, { unlockhash, value }) => {
+                cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
                 if (unlockhash == cam[unlockhash].unlockhash) {
                     cam[unlockhash].total += parseInt(value);
-                } 
+                }
                 return cam;
             }, {}));
             for (r = 0; r < siacoinoutputs.length; r++) {
@@ -329,15 +329,15 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 let txHeight = transactions[t].height;
 
                 addToAddress(addr, amt, txhash, 'in', txType, txHeight)
-                .then((done) => {
+                    .then((done) => {
 
-                })
-                .catch((errors) => { 
-                    console.log(errors);
-                });
-                let totals1 = await calcTotals(addr, 'in',amt, txHeight, txhash);
+                    })
+                    .catch((errors) => {
+                        console.log(errors);
+                    });
+                let totals1 = await calcTotals(addr, 'in', amt, txHeight, txhash);
             }
-            
+
             addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
         }
     }
@@ -347,40 +347,40 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
     async function addToTransactions(height, hash, parent, type, total, fees, timestamp, ) { // add to transactions table
         //console.log('attempting to add tx ' + hash + ' to database as a '+type+' transaction.' );
         return new Promise((resolve) => {
-        knex('transactions').insert({
-            block_height: height,
-            tx_hash: hash,
-            parent_block: parent,
-            tx_type: type,
-            tx_total: total,
-            fees: fees,
-            timestamp: timestamp
-        }).then((results) => {
-	    //console.log(results);
-            resolve('Inserted');//console.log(results)
-        }).catch((error) => {
-	    console.log(error);
-            resolve('fail');// console.log(error)
+            knex('transactions').insert({
+                block_height: height,
+                tx_hash: hash,
+                parent_block: parent,
+                tx_type: type,
+                tx_total: total,
+                fees: fees,
+                timestamp: timestamp
+            }).then((results) => {
+                //console.log(results);
+                resolve('Inserted');//console.log(results)
+            }).catch((error) => {
+                console.log(error);
+                resolve('fail');// console.log(error)
+            })
         })
-    })
     }
 
     async function addToAddress(address, amount, tx_hash, direction, type, height) {
         return new Promise((resolve) => {
-        knex('address_history').insert({
-            address: address,
-            amount: amount,
-            tx_hash: tx_hash,
-            direction: direction,
-            type: type,
-            height: height
-        }).then((res) => {
-	    //console.log(res);
-            resolve('Inserted');//console.log(res)
-        }).catch((err) => {
-            console.log(err);
+            knex('address_history').insert({
+                address: address,
+                amount: amount,
+                tx_hash: tx_hash,
+                direction: direction,
+                type: type,
+                height: height
+            }).then((res) => {
+                //console.log(res);
+                resolve('Inserted');//console.log(res)
+            }).catch((err) => {
+                console.log(err);
+            })
         })
-    })
     }
     async function calcTotals(address, direction, amountscp, height, tx_hash) {
         return new Promise((resolve) => {
@@ -391,7 +391,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 .select('*')
                 .where('address', address)
                 .then((success) => {
-                    console.log('attempting totals: ' + address + 'balance: ' + amountscp / scprimecoinprecision)               
+                    console.log('attempting totals: ' + address + 'balance: ' + amountscp / scprimecoinprecision)
                     if (success.length === 0) {
                         console.log('Address ' + address + ' was not found, adding on height', height)
                         knex('address_totals')
@@ -400,7 +400,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                                 totalscp: amountscp
                             })
                             .then((added) => {
-                                console.log('Added ' + address + ' with amount '+amountscp/scprimecoinprecision);
+                                console.log('Added ' + address + ' with amount ' + amountscp / scprimecoinprecision);
                                 resolve('added');
                             })
                             .catch((error) => {
@@ -437,7 +437,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 })
 
         })
-    }    
+    }
 }
 
 async function addToBlocks(height, hash, difficulty, estimatedhashrate,
