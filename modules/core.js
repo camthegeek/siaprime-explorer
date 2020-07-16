@@ -132,6 +132,9 @@ function startSync(startHeight) { // start synchronizing blocks from startHeight
                     console.log(error);  // scream about it
                 })
         })
+        .catch((error) => {
+            console.log(error);
+        })
 }
 
 function getBlockInfo(spd, blockNumber) { // begin to pull data for each blockNumber (block height)
@@ -143,6 +146,9 @@ function getBlockInfo(spd, blockNumber) { // begin to pull data for each blockNu
         })
             .then((rawblock) => { // with the data we get
                 resolve(rawblock); // send it back to the function who called it, when we get the data!
+            })
+            .catch((error) => {
+                console.log(error);
             })
     })
 }
@@ -416,8 +422,10 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                             knex('address_totals')
                                 .where('address', address)
                                 .update('totalscp', added)
-                                .then(
-                                    resolve('updated'));
+                                .then(resolve('updated'))
+                                .catch((error) => {
+                                    console.log(error);
+                                });
                         }
                         if (direction == 'out') {
                             let removed = currentamount - converted;
@@ -427,8 +435,10 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                             knex('address_totals')
                                 .where('address', address)
                                 .update('totalscp', removed)
-                                .then(
-                                    resolve('updated'));
+                                .then(resolve('updated'))
+                                .catch((error) => {
+                                    console.log(error);
+                                })
                         }
                     }
                 })
