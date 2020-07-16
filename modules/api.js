@@ -206,4 +206,41 @@ app.get('/api/block/:id', cache.route(), (req, res) => {
         });
     })
 })
-//};
+
+/* api route
+    fetches all addresses between two heights
+*/
+app.get('/api/between/:start/:end', cache.route(), async (req, res) => { 
+    let start_height;
+    let end_height;
+    if (req.params.start) {
+        start_height = req.params.start;
+    } else {
+        start_height = 0;
+    }
+    if (req.params.end) { 
+        end_height = req.params.end;
+    } else {
+        end_height = 1;
+    }
+    if (start_height > end_height || end_height < start_height) {
+        res.send({
+            "error": "Start height must be less than end height"
+        })
+        return;
+    }
+    
+    support.getAddressesBetweenBlocks(start_height, end_height)
+    .then((data) => {
+        let returnArray = {
+            "count": data.length,
+            "addresses": []
+        }
+        for (i=0;i<data.length;i++) {
+            returnArray.addresses.push(data[i].address);
+        }
+        res.send({
+            "data": returnArray
+        })
+    })
+});
