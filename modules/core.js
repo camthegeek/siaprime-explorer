@@ -18,11 +18,6 @@ const knex = require('knex')({
 const {attachOnDuplicateUpdate} = require('knex-on-duplicate-update'); 
 attachOnDuplicateUpdate();
 const cors = require('cors'); // I added cors just in case it's ever needed.. but thinking we don't need it, ever.
-const Bottleneck = require('bottleneck');   // pending usage. 
-const limiter = new Bottleneck({            // may be used at a later time. if not used when deployed, will be removed.
-    minTime: 250,
-    maxConcurrent: 2
-});
 
 function createBlockTable() {
     return knex.schema
