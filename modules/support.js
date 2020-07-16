@@ -72,6 +72,15 @@ async function getLastIndexed() {
 })
 }
 
+async function getAddressesBetweenBlocks(start, end) { 
+    // get addresses that received coin between height_start and height_End
+    let data = await knex('address_history').whereBetween('height', [start, end]);
+    return new Promise((resolve) => { 
+       
+        resolve(JSON.parse(JSON.stringify(data)));
+    })
+}
+
 module.exports = {
     getTx,
     getAddress,
@@ -79,5 +88,6 @@ module.exports = {
     genRichlistSCP,
     getInfoBlock,
     getTopBlock,
-    getLastIndexed
+    getLastIndexed,
+    getAddressesBetweenBlocks
 }
