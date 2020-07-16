@@ -1,5 +1,5 @@
 const sia = require('siaprime.js');
-const config = require('./config.json');
+const config = require('../config.json');
 const mysql = require('mysql');
 const knex = require('knex')({
     client: 'mysql',
@@ -17,17 +17,12 @@ const knex = require('knex')({
 });
 const {attachOnDuplicateUpdate} = require('knex-on-duplicate-update'); 
 attachOnDuplicateUpdate();
-const express = require('express');
-const app = express();
 const cors = require('cors'); // I added cors just in case it's ever needed.. but thinking we don't need it, ever.
 const Bottleneck = require('bottleneck');   // pending usage. 
 const limiter = new Bottleneck({            // may be used at a later time. if not used when deployed, will be removed.
     minTime: 250,
     maxConcurrent: 2
 });
-
-// launch api on load
-require('./modules/api')(app);
 
 function createBlockTable() {
     return knex.schema
@@ -119,7 +114,7 @@ async function startUp() {  // the main function ran when script is started
 startUp(); // run the damn thing when you launch.
 //setInterval(startUp, 60000); // run it every so often to catch new blocks
 
-var scprimecoinprecision = config.general.precision;;
+var scprimecoinprecision = config.general.precision;
 var baseCoinbase = 300;
 
 function startSync(startHeight) { // start synchronizing blocks from startHeight
@@ -127,15 +122,18 @@ function startSync(startHeight) { // start synchronizing blocks from startHeight
         .then((spd) => { // now that we're connected.. 
             spd.call('/consensus') // get consensus data
                 .then((consensus) => { // with that data..
-                    //var topHeight = 1400; // purely for testing
+                    //var topHeight = 100; // purely for testing
                     var topHeight = consensus.height; // we want to know the current height of the blockchain
-                    // console.log('startHeight: ', startHeight);
-                    // console.log('topHeight: ', topHeight);
+                    //console.log('startHeight:', startHeight);
+                    //console.log('topHeight:', topHeight);
                     if ((startHeight - 1) == topHeight) { // if our startheight (minus one, because we counted all the rows and found ourselves 1 ahead of the blockchain), is equal to consensus height
                         console.log('heights are the same, taking a break');
-                        return; // lets not do a damn thing at all.
+
+                        setTimeout(startUp, 60000); // run startUp once if heights ~1 block difference or even. startUp loops back around to startSync..
+                        
+                        //return; // lets not do a damn thing at all.
                     } else {
-                    getBlocks(spd, topHeight, startHeight); // lets start processing the blocks starting at startHeight until we reach topHeight
+                        getBlocks(spd, topHeight, startHeight); // lets start processing the blocks starting at startHeight until we reach topHeight
                     }
                 })
                 .catch((error) => {  // if there's an error. . . 
@@ -272,11 +270,12 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 let txHeight = transactions[t].height;
                 addToAddress(addr, amt, txhash, 'in', txType, txHeight)
                 .then((done) => {
-                    // likely do not need this.
-                }).catch((errors) => { 
-                    console.log(errors);
+                    
                 })
-                let totals = await calcTotals(addr, 'in', amt, txHeight, txhash);
+                .catch((errors) => { 
+                    console.log(errors);
+                });
+                let totals3 = await calcTotals(addr, 'in', amt, txHeight, txhash);
             }
         } else { // if siacoininputs contains stuff..
             if ((transactions[t].rawtransaction.siacoinoutputs).length === 0) {
@@ -311,11 +310,12 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
 
                 addToAddress(addr, '-'+amt, txhash, 'out', txType, txHeight)
                 .then((done) => {
-                    // likely do not need this.
-                }).catch((errors) => { 
-                    console.log(errors);
+                // do something
                 })
-                let totals = await calcTotals(addr, 'out', amt, txHeight, txhash);
+                .catch((errors) => { 
+                    console.log(errors);
+                });
+                let totals2 = await calcTotals(addr, 'out', amt, txHeight, txhash);
             }
 
             /*  we COULD technically use a function to do this so we're not copy/pasting code 3 times
@@ -338,11 +338,12 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
 
                 addToAddress(addr, amt, txhash, 'in', txType, txHeight)
                 .then((done) => {
-                    // likely do not need this.
-                }).catch((errors) => { 
-                    console.log(errors);
+
                 })
-                let totals = await calcTotals(addr, 'in',amt, txHeight, txhash);
+                .catch((errors) => { 
+                    console.log(errors);
+                });
+                let totals1 = await calcTotals(addr, 'in',amt, txHeight, txhash);
             }
             
             addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
@@ -363,7 +364,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             fees: fees,
             timestamp: timestamp
         }).then((results) => {
-	    console.log(results);
+	    //console.log(results);
             resolve('Inserted');//console.log(results)
         }).catch((error) => {
 	    console.log(error);
@@ -382,17 +383,13 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             type: type,
             height: height
         }).then((res) => {
-	        //console.log(res);
+	    //console.log(res);
             resolve('Inserted');//console.log(res)
         }).catch((err) => {
             console.log(err);
         })
     })
     }
-    resolve('done');
-
-
-    
     async function calcTotals(address, direction, amountscp, height, tx_hash) {
         return new Promise((resolve) => {
             /*if (direction == 'out') {
@@ -404,14 +401,15 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 .then((success) => {
                     console.log('attempting totals: ' + address + 'balance: ' + amountscp / scprimecoinprecision)               
                     if (success.length === 0) {
-                        console.log('Address ' + address + ' was not found, adding')
+                        console.log('Address ' + address + ' was not found, adding on height', height)
                         knex('address_totals')
                             .insert({
                                 address: address,
-                                totalscp: amountscp / scprimecoinprecision
+                                totalscp: amountscp
                             })
                             .then((added) => {
                                 console.log('Added ' + address + ' with amount '+amountscp/scprimecoinprecision);
+                                resolve('added');
                             })
                             .catch((error) => {
                                 console.log(error);
@@ -419,14 +417,15 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                     } else {
                         console.log('Address ' + address + ' already exists, updating.')
                         let currentamount = success[0].totalscp;
-                        let converted = amountscp / scprimecoinprecision;
+                        let converted = amountscp;
                         if (direction == 'in') {
                             let added = (currentamount + converted);
                             console.log('Incrementing ' + address + ' by ' + amountscp / scprimecoinprecision);
                             knex('address_totals')
                                 .where('address', address)
-                                .update('totalscp', added);
-                                //.then(console.log);
+                                .update('totalscp', added)
+                                .then(
+                                    resolve('updated'));
                         }
                         if (direction == 'out') {
                             let removed = currentamount - converted;
@@ -436,7 +435,8 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                             knex('address_totals')
                                 .where('address', address)
                                 .update('totalscp', removed)
-                                .then(console.log);
+                                .then(
+                                    resolve('updated'));
                         }
                     }
                 })
@@ -445,10 +445,8 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 })
 
         })
-    }
+    }    
 }
-
-
 
 async function addToBlocks(height, hash, difficulty, estimatedhashrate,
     maturitytimestamp, timestamp, parentid,
@@ -496,14 +494,3 @@ async function addToBlocks(height, hash, difficulty, estimatedhashrate,
             })
     })
 }
-
-/* all my shit has this block when you start it up. :) */
-app.listen(config.api.port, () => {
-    console.log('# # # # # # # # # # # # # # # # # # # # # #');
-    console.log('# - - - - - - - S C P R I M E - - - - - - #');
-    console.log('# - - - B L O C K - E X P L O R E R - - - #');
-    console.log('# - - - - B Y - C A M T H E G E E K - - - #');
-    console.log('# - - I S - B O O T I N G - U P - O N - - #');
-    console.log('# - - - - - - P O R T - ' + config.api.port + ' - - - - - - #');
-    console.log('# # # # # # # # # # # # # # # # # # # # # #');
-});
