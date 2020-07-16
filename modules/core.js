@@ -119,9 +119,7 @@ function startSync(startHeight) { // start synchronizing blocks from startHeight
                     //console.log('topHeight:', topHeight);
                     if ((startHeight - 1) == topHeight) { // if our startheight (minus one, because we counted all the rows and found ourselves 1 ahead of the blockchain), is equal to consensus height
                         console.log('heights are the same, taking a break');
-
                         setTimeout(startUp, 60000); // run startUp once if heights ~1 block difference or even. startUp loops back around to startSync..
-
                         //return; // lets not do a damn thing at all.
                     } else {
                         getBlocks(spd, topHeight, startHeight); // lets start processing the blocks starting at startHeight until we reach topHeight
@@ -389,9 +387,6 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
     }
     async function calcTotals(address, direction, amountscp, height, tx_hash) {
         return new Promise((resolve) => {
-            /*if (direction == 'out') {
-                amountscp = '-' + amountscp;
-            }*/
             knex('address_totals')
                 .select('*')
                 .where('address', address)
@@ -399,18 +394,35 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                     console.log('attempting totals: ' + address + 'balance: ' + amountscp / scprimecoinprecision)
                     if (success.length === 0) {
                         console.log('Address ' + address + ' was not found, adding on height', height)
-                        knex('address_totals')
-                            .insert({
-                                address: address,
-                                totalscp: amountscp
-                            })
-                            .then((added) => {
-                                console.log('Added ' + address + ' with amount ' + amountscp / scprimecoinprecision);
-                                resolve('added');
-                            })
-                            .catch((error) => {
-                                console.log(error);
-                            })
+                        if (direction == 'in') {
+                            knex('address_totals')
+                                .insert({
+                                    address: address,
+                                    totalscp: amountscp
+                                })
+                                .then((added) => {
+                                    console.log('Added ' + address + ' with amount ' + amountscp / scprimecoinprecision);
+                                    resolve('added');
+                                })
+                                .catch((error) => {
+                                    console.log(error);
+                                })
+                            }
+                            if (direction == 'out') {
+                                knex('address_totals')
+                                    .insert({
+                                        address: address,
+                                        totalscp: amountscp
+                                    })
+                                    .then((added) => {
+                                        console.log('Added ' + address + ' with amount ' + amountscp / scprimecoinprecision);
+                                        resolve('added');
+                                    })
+                                    .catch((error) => {
+                                        console.log(error);
+                                    })
+                            }
+
                     } else {
                         console.log('Address ' + address + ' already exists, updating.')
                         let currentamount = success[0].totalscp;
