@@ -109,12 +109,15 @@ app.get('/api/contract/:contract', (req, res) => {
 });
 
 /* api route for richlist lol */
-app.get('/api/richlist/:type/:amount', (req, res) => {
+app.get(['/api/richlist/:type/:amount', '/api/richlist/:type'], (req, res) => {
     let type = req.params.type;
     let amount = req.params.amount;
-
+    
     if (amount > 250) {
         amount = 250;
+    }
+    if (!amount) { 
+        amount = 5
     }
 
     switch (type) {
