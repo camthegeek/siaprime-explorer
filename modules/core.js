@@ -108,11 +108,8 @@ async function startUp() {  // the main function ran when script is started
     }
 }
 
-// seems stuff during this interval loop. 74953. 
-// fetches same blocks over and over. not sure why it happened yet.
-
 startUp(); // run the damn thing when you launch.
-//setInterval(startUp, 60000); // run it every so often to catch new blocks
+setInterval(startUp, 60000); // run it every so often to catch new blocks
 
 var scprimecoinprecision = config.general.precision;
 var baseCoinbase = 300;
