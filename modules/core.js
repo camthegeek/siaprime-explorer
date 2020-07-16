@@ -482,7 +482,7 @@ async function addToBlocks(height, hash, difficulty, estimatedhashrate,
                 resolve('true');
             })
             .catch((error) => {
-                throw (error);
+                console.log(error);
             })
     })
 }
