@@ -68,8 +68,7 @@ async function getLastIndexed() {
     let counter = await knex('blocks').count({ height: 'height' }); // get total amount of rows from sql
     let height = JSON.parse(JSON.stringify(counter[0].height)); // parse the json, retreive height variable
     return new Promise((resolve) => { 
-    console.log(height);
-    resolve(height);
+    resolve(height-1); 
 })
 }
 
