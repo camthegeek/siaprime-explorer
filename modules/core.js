@@ -416,7 +416,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                                 knex('address_totals')
                                     .insert({
                                         address: address,
-                                        totalscp: amountscp,
+                                        totalscp: '-'+amountscp,
                                         first_seen: height,
                                         last_seen: height
                                     })
