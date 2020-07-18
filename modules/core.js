@@ -83,6 +83,8 @@ function createBlockTable() {
             totals.string('address', 76).primary();
             totals.decimal('totalscp', 36, 0);
             totals.integer('totalspf');
+            totals.string('first_seen', 12);
+            totals.string('last_seen', 12);
         })
         .then((created) => {
             console.log(created)
@@ -398,7 +400,9 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                             knex('address_totals')
                                 .insert({
                                     address: address,
-                                    totalscp: amountscp
+                                    totalscp: amountscp,
+                                    first_seen: height,
+                                    last_seen: height
                                 })
                                 .then((added) => {
                                     console.log('Added ' + address + ' with amount ' + amountscp / scprimecoinprecision);
@@ -412,7 +416,9 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                                 knex('address_totals')
                                     .insert({
                                         address: address,
-                                        totalscp: amountscp
+                                        totalscp: amountscp,
+                                        first_seen: height,
+                                        last_seen: height
                                     })
                                     .then((added) => {
                                         console.log('Added ' + address + ' with amount ' + amountscp / scprimecoinprecision);
@@ -432,7 +438,10 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                             console.log('Incrementing ' + address + ' by ' + amountscp / scprimecoinprecision);
                             knex('address_totals')
                                 .where('address', address)
-                                .update('totalscp', added)
+                                .update({
+                                    'totalscp': added,
+                                    'last_seen': height
+                                })
                                 .then(resolve('updated'))
                                 .catch((error) => {
                                     console.log(error);
@@ -445,7 +454,10 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                             console.log('new amount', removed);
                             knex('address_totals')
                                 .where('address', address)
-                                .update('totalscp', removed)
+                                .update({
+                                    'totalscp': removed,
+                                    "last_seen": height
+                                })
                                 .then(resolve('updated'))
                                 .catch((error) => {
                                     console.log(error);
