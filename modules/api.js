@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const support = require('./support.js');
 const config = require('../config.json');
-var cache = require('express-redis-cache')();
+var cache = require('express-redis-cache')({ prefix: 'scpe' });
 var scprimecoinprecision = config.general.precision;
 
 
@@ -50,7 +50,7 @@ app.get('/api/tx/:id', cache.route(), (req, res) => {
     Get totals for single address
 */
 
-app.get('/api/total/:addr', cache.route(), (req, res) => {
+app.get('/api/total/:addr', cache.route('addr'), (req, res) => {
     support.getAddressTotal(req.params.addr)
         .then((data) => {
             console.log(data);
@@ -64,7 +64,7 @@ app.get('/api/total/:addr', cache.route(), (req, res) => {
         })
 })
 /* api route for address info */
-app.get('/api/address/:addr', cache.route(), (req, res) => {
+app.get('/api/address/:addr', cache.route({ expire: 60 }), async (req, res) => {
     console.log(req.params.addr); // let's see wtf is being req
     support.getAddress(req.params.addr)
         .then((results) => {
@@ -156,7 +156,7 @@ app.get(['/api/richlist/:type/:amount', '/api/richlist/:type'], cache.route(), (
 
 });
 
-app.get('/api/health', cache.route(), async (req, res) => {
+app.get('/api/health', async (req, res) => {
     let last_indexed = await support.getLastIndexed();
     let current_height = await support.getTopBlock();
     console.log(current_height);
