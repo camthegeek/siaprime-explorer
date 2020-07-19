@@ -193,7 +193,7 @@ app.get('/', (req, res) => {
     });
 });
 /* api route for block info */
-app.get('/api/block/:id', cache.route(), (req, res) => {
+app.get('/api/block/:id',  cache.route({ expire: 60 }), (req, res) => {
     support.getInfoBlock(req.params.id).then((block) => {
         if (block.length<1) {
             res.send({
@@ -212,7 +212,7 @@ app.get('/api/block/:id', cache.route(), (req, res) => {
             "maturitytimestamp": block.maturitytimestamp,
             "timestamp": block.timestamp,
             "parentid": block.parentid,
-            "totalcoins": block.totalcoins,
+            "totalcoins": block.totalcoins / scprimecoinprecision,
             "minerpayoutcount": block.minerpayoutcount,
             "transactioncount": block.transactioncount,
             "siacoininputcount": block.siacoininputcount,
@@ -225,12 +225,12 @@ app.get('/api/block/:id', cache.route(), (req, res) => {
             "minerfeecount": block.minerfeecount,
             "arbitrarydatacount": block.arbitrarydatacount,
             "transactionsignaturecount": block.transactionsignaturecount,
-            "activecontractcost": block.activecontractcost,
+            "activecontractcost": block.activecontractcost / scprimecoinprecision,
             "activecontractcount": block.activecontractcount,
-            "activecontractsize": block.activecontractsize,
-            "totalcontractcost": block.totalcontractcost,
-            "totalcontractsize": block.totalcontractsize,
-            "totalrevisionvolume": block.totalrevisionvolume,
+            "activecontractsize": support.formatBytes(block.activecontractsize),
+            "totalcontractcost": block.totalcontractcost / scprimecoinprecision,
+            "totalcontractsize": support.formatBytes(block.totalcontractsize),
+            "totalrevisionvolume": support.formatBytes(block.totalrevisionvolume),
             "minerarbitrarydata": block.minerarbitrarydata
         });
     })
