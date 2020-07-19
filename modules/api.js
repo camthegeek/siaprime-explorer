@@ -22,6 +22,14 @@ app.listen(config.api.port, () => {
 app.get('/api/tx/:id', cache.route(), (req, res) => {
     support.getTx(req.params.id)
         .then((results) => {
+            if (results.length<1) {
+                res.send({
+                    "data": {
+                        "error": "transaction not found"
+                    }
+                });
+                return;
+            }
             res.json({
                 "height": results[0].block_height,
                 "hash": results[0].tx_hash,
@@ -54,6 +62,14 @@ app.get('/api/total/:addr', cache.route('addr'), (req, res) => {
     support.getAddressTotal(req.params.addr)
         .then((data) => {
             console.log(data);
+            if (data.length<1) {
+                res.send({
+                    "data": {
+                        "error": "address not found"
+                    }
+                });
+                return;
+            }
             let returndata = {
                 "address": data[0].address,
                 "scp": data[0].totalscp / scprimecoinprecision,
@@ -70,6 +86,14 @@ app.get('/api/address/:addr', cache.route({ expire: 60 }), async (req, res) => {
     support.getAddress(req.params.addr)
         .then((results) => {
             console.log(results);
+            if (results.length<1) {
+                res.send({
+                    "data": {
+                        "error": "address not found"
+                    }
+                });
+                return;
+            }
             let returnArray = {
                 "address": results[0].address,
                 "first_seen": address_totals[0].first_seen,
@@ -171,6 +195,14 @@ app.get('/', (req, res) => {
 /* api route for block info */
 app.get('/api/block/:id', cache.route(), (req, res) => {
     support.getInfoBlock(req.params.id).then((block) => {
+        if (block.length<1) {
+            res.send({
+                "data": {
+                    "error": "block not found"
+                }
+            });
+            return;
+        }
         var block = block[0];
         res.json({
             "height": block.height,
