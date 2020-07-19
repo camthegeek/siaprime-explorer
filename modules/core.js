@@ -101,7 +101,7 @@ async function startUp() {  // the main function ran when script is started
         let counter = await knex('blocks').count({ height: 'height' }); // get total amount of rows from sql
         let height = JSON.parse(JSON.stringify(counter[0].height)); // parse the json, retreive height variable
         //let height = 42; // purely for testing
-        startSync(height); // start syncing from total row height (last block in sql)
+        startSync(height - 1); // start syncing from total row height (last block in sql)
     }
 }
 
@@ -118,13 +118,13 @@ function startSync(startHeight) { // start synchronizing blocks from startHeight
                     //var topHeight = 100; // purely for testing
                     var topHeight = consensus.height; // we want to know the current height of the blockchain
                     //console.log('startHeight:', startHeight);
-                    //console.log('topHeight:', topHeight);
-                    if ((startHeight - 1) == topHeight) { // if our startheight (minus one, because we counted all the rows and found ourselves 1 ahead of the blockchain), is equal to consensus height
-                        console.log('heights are the same, taking a break');
+                   // console.log('topHeight:', topHeight);
+                    if ((startHeight) == topHeight) { // if our startheight (minus one, because we counted all the rows and found ourselves 1 ahead of the blockchain), is equal to consensus height
+                        console.log('['+new Date().toLocaleString()+'] heights are the same, taking a break');
                         setTimeout(startUp, 60000); // run startUp once if heights ~1 block difference or even. startUp loops back around to startSync..
                         //return; // lets not do a damn thing at all.
                     } else {
-                        getBlocks(spd, topHeight, startHeight); // lets start processing the blocks starting at startHeight until we reach topHeight
+                        getBlocks(spd, topHeight, startHeight+1); // lets start processing the blocks starting at startHeight until we reach topHeight
                     }
                 })
                 .catch((error) => {  // if there's an error. . . 
@@ -147,24 +147,29 @@ function getBlockInfo(spd, blockNumber) { // begin to pull data for each blockNu
                 resolve(rawblock); // send it back to the function who called it, when we get the data!
             })
             .catch((error) => {
-                console.log(error);
+                // console.log(error);
+                resolve('error');
             })
     })
 }
 
 async function getBlocks(spd, topHeight, startHeight) { // this function deserves a better name. gets block from sync, starts to process it.
-    let blockNumber = startHeight; // we start syncing from this height (last block in sql)
+    let blockNumber = startHeight; // we start syncing from this height (last block in sql)\
     let ready = true;
     (async () => {
         try {
-            if (blockNumber < topHeight) {
+            if (blockNumber <= topHeight) {
                 for (i = 0; i < topHeight; i++) { // do all this stuff. . 
                     if (ready == true) {
                         ready = false;
-                        const blockInfo = await getBlockInfo(spd, blockNumber)
-                        const parsed = await parseWholeBlock(blockInfo, blockNumber);
-                        blockNumber++
-                        ready = true;
+                        const blockInfo = await getBlockInfo(spd, blockNumber);
+                        if (blockInfo != "error") { 
+                            const parsed = await parseWholeBlock(blockInfo, blockNumber);
+                            blockNumber++
+                            ready = true;
+                        } else {
+                            setTimeout(startUp, 60000);
+                        }
                     }
                 }
             }
