@@ -66,6 +66,7 @@ app.get('/api/total/:addr', cache.route('addr'), (req, res) => {
 /* api route for address info */
 app.get('/api/address/:addr', cache.route({ expire: 60 }), async (req, res) => {
     console.log(req.params.addr); // let's see wtf is being req
+    let address_totals = await support.getAddressTotal(req.params.addr);
     support.getAddress(req.params.addr)
         .then((results) => {
             console.log(results);
@@ -73,8 +74,7 @@ app.get('/api/address/:addr', cache.route({ expire: 60 }), async (req, res) => {
                 "address": results[0].address,
                 "first_seen": address_totals[0].first_seen,
                 "last_seen": address_totals[0].last_seen,
-                "transactions": [],
-                "totalSCP": []
+                "transactions": []
             };
             let total = 0;
             console.log(results.length);
@@ -85,15 +85,10 @@ app.get('/api/address/:addr', cache.route({ expire: 60 }), async (req, res) => {
                     "direction": results[b].direction
                 }
                 returnArray.transactions.push(item);
-                if (results[b].direction == "in") {
-                    total += results[b].amount;
-                } else {
-                    total -= results[b].amount;
-                }
-                //total += parseInt(results[b].amount/scprimecoinprecision);
-
             }
-            returnArray.totalSCP.push(total / scprimecoinprecision);
+            
+            returnArray['totalSCP'] = address_totals[0].totalscp / scprimecoinprecision;
+
             res.json({
                 "data": returnArray
             })
