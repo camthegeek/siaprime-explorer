@@ -71,6 +71,8 @@ app.get('/api/address/:addr', cache.route(), (req, res) => {
             console.log(results);
             let returnArray = {
                 "address": results[0].address,
+                "first_seen": address_totals[0].first_seen,
+                "last_seen": address_totals[0].last_seen,
                 "transactions": [],
                 "totalSCP": []
             };
