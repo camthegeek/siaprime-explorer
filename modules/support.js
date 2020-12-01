@@ -94,6 +94,12 @@ function formatBytes(bytes, decimals = 2) {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
 
+function resetDatabase() {
+    return new Promise((resolve) => {
+        resolve(knex.schema.dropTableIfExists('blocks').dropTableIfExists('transactions').dropTableIfExists('address_history').dropTableIfExists('address_totals'));
+    })
+}
+
 module.exports = {
     getTx,
     getAddress,
@@ -103,5 +109,6 @@ module.exports = {
     getTopBlock,
     getLastIndexed,
     getAddressesBetweenBlocks,
-    formatBytes
+    formatBytes,
+    resetDatabase
 }

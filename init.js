@@ -8,6 +8,9 @@ if (argv.hasOwnProperty('module')) {
         break;
         case 'api': 
             require('./modules/api.js');
-        break
+        break;
+        case 'reset':
+            require('./modules/reset.js');
+        break;
     }
 }
