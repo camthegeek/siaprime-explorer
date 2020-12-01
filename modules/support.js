@@ -1,8 +1,9 @@
 const config = require('../config.json');
 const sia = require('siaprime.js');
-const mysql = require('mysql');
+const pg = require('pg');
+const { async } = require('@babel/runtime/regenerator');
 const knex = require('knex')({
-    client: 'mysql',
+    client: 'postgresql',
     connection: {
         host: config.sql.ip,
         user: config.sql.user,

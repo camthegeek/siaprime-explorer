@@ -1,8 +1,9 @@
 const sia = require('siaprime.js');
 const config = require('../config.json');
 const mysql = require('mysql');
+const pg = require('pg');
 const knex = require('knex')({
-    client: 'mysql',
+    client: 'postgresql',
     connection: {
         host: config.sql.ip,
         user: config.sql.user,
@@ -10,7 +11,7 @@ const knex = require('knex')({
         database: config.sql.database
     },              // not sure we need this pool area
     pool: {         // we need to setup tests on this soon
-        min: 0,
+        min: 2,
         max: 25,
         propagateCreateError: false // <- default is true, set to false
     },
@@ -26,8 +27,8 @@ function createBlockTable() {
             table.string('hash', 64);   // block.blockid
             table.decimal('difficulty', 30, 0); // block.difficulty
             table.decimal('estimatedhashrate', 30, 0);  // block.estimatedhashrate
-            table.bigInteger('maturitytimestamp');  // block.maturitytimestamp
-            table.bigInteger('timestamp');  // block.rawblock.timestamp
+            table.string('maturitytimestamp');  // block.maturitytimestamp
+            table.string('timestamp');  // block.rawblock.timestamp
             table.string('parentid', 64);   // block.rawblock.parentid
             table.decimal('totalcoins', 36, 0); // block.totalcoins
             table.integer('minerpayoutcount');   // block.minerpayoutcount
@@ -47,7 +48,7 @@ function createBlockTable() {
             table.decimal('activecontractsize', 30, 0); // block.activecontractsize
             table.decimal('totalcontractcost', 36, 0);  // block.totalcontractcost
             table.decimal('totalcontractsize', 30, 0);  // block.totalcontractsize
-            table.bigInteger('totalrevisionvolume');    // block.totalrevisionvolume
+            table.string('totalrevisionvolume');    // block.totalrevisionvolume
             table.string('minerarbitrarydata'); // too lazy to fill this in --cam 
         })
         .createTable('transactions', function (tx) {
@@ -55,9 +56,9 @@ function createBlockTable() {
             tx.string('tx_hash', 64).primary();   // block.transactions.id
             tx.string('parent_block', 64); // block.trasactions.parent
             tx.string('tx_type', 10);
-            tx.bigInteger('tx_total');  // block.transactions.rawtransaction.siacoinoutputs
+            tx.string('tx_total');  // block.transactions.rawtransaction.siacoinoutputs
             tx.decimal('fees', 36, 0);
-            tx.bigInteger('timestamp'); // block.rawblock.timestamp
+            tx.string('timestamp'); // block.rawblock.timestamp
             /*tx.string('filecontractids');  // block.transactions.filecontractids
             tx.string('filecontractmissedproofoutputids');  // block.transactions.filecontractmissedproofoutputids
             tx.string('filecontractrevisionmissedproofoutputids');  // block.transactions.filecontractrevisionmissedproofoutputids
@@ -72,7 +73,7 @@ function createBlockTable() {
         })
         .createTable('address_history', function (addr) {
             addr.string('address', 76);
-            addr.decimal('amount', 36, 0);
+            addr.decimal('amount', null);
             addr.string('tx_hash', 64);
             addr.string('direction', 4);
             addr.string('type', 10);
@@ -81,7 +82,7 @@ function createBlockTable() {
         })
         .createTable('address_totals', function (totals) {
             totals.string('address', 76).primary();
-            totals.decimal('totalscp', 36, 0);
+            totals.decimal('totalscp', null);
             totals.integer('totalspf');
             totals.string('first_seen', 12);
             totals.string('last_seen', 12);
@@ -101,7 +102,7 @@ async function startUp() {  // the main function ran when script is started
         let counter = await knex('blocks').count({ height: 'height' }); // get total amount of rows from sql
         let height = JSON.parse(JSON.stringify(counter[0].height)); // parse the json, retreive height variable
         //let height = 42; // purely for testing
-        startSync(height - 1); // start syncing from total row height (last block in sql)
+        startSync(height); // start syncing from total row height (last block in sql)
     }
 }
 
@@ -436,7 +437,8 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
 
                     } else {
                         console.log('Address ' + address + ' already exists, updating.')
-                        let currentamount = success[0].totalscp;
+                        let currentamount = Number(success[0].totalscp);
+                        console.log('Address ', address, ' already found with a balance of ', currentamount);
                         let converted = amountscp;
                         if (direction == 'in') {
                             let added = (currentamount + converted);
