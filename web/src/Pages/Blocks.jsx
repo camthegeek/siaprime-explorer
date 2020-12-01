@@ -7,7 +7,7 @@ class BlockInfo extends Component {
         blockdata: '',
     }
     componentDidMount() {
-        axios.get('http://192.168.1.2:42424/api/block/'+this.state.blocktoQ)
+        axios.get('http://localhost:42424/api/block/'+this.state.blocktoQ)
             .then(blockStuff => {
                 console.log(blockStuff.data)
                 this.setState({

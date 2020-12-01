@@ -10,7 +10,7 @@ class NetworkData extends Component {
         usedStorage: '',
     }
     componentDidMount() {
-        axios.get('http://192.168.1.2:42424/api/health')
+        axios.get('http://localhost:42424/api/health')
             .then(blockStuff => {
                 let hr = getReadableHashRateString(blockStuff.data.difficulty / blockStuff.data.blockfrequency);
                 let sb = getReadableStorageString(blockStuff.data.totalStorage);
