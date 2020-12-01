@@ -5,6 +5,11 @@ const config = require('../config.json');
 var cache = require('express-redis-cache')({ prefix: 'scpe' });
 var scprimecoinprecision = config.general.precision;
 
+app.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+})
 
 /* all my shit has this block when you start it up. :) */
 app.listen(config.api.port, () => {
@@ -178,10 +183,16 @@ app.get(['/api/richlist/:type/:amount', '/api/richlist/:type'], cache.route(), (
 app.get('/api/health', async (req, res) => {
     let last_indexed = await support.getLastIndexed();
     let current_height = await support.getTopBlock();
-    console.log(current_height);
+    let netInfo = await support.getNetworkInfo();
     res.send({
-        "current_block": current_height, // this gets last block from spd
-        "last_indexed": last_indexed, // this gets last block for sql 
+        "current_block": netInfo.height, // this gets last block from spd
+        "last_indexed": last_indexed, // this gets last block for sql
+        "difficulty": netInfo.difficulty,
+        "blockfrequency": netInfo.blockfrequency,
+        "genesisTimestamp": netInfo.genesisTimestamp,
+        "hostCount": netInfo.hostCount,
+        "totalStorage": netInfo.cummulativeStorage,
+        "usedStorage": netInfo.cummulativeStorage-netInfo.availableStorage
 
     });
 })
