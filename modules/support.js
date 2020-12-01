@@ -100,6 +100,35 @@ function resetDatabase() {
     })
 }
 
+async function getNetworkInfo() {
+    return new Promise((resolve) => {
+        sia.connect(config.daemon.ip + ':' + config.daemon.port) // connect to daemon
+            .then((spd) => { // now that we're connected.. 
+                spd.call('/consensus') // get consensus data
+                    .then((consensus) => { // with that data..
+                        var returnData = {
+                            height: consensus.height,
+                            difficulty: Number(consensus.difficulty),
+                            blockfrequency: consensus.blockfrequency,
+                            genesisTimestamp: consensus.genesistimestamp,
+                            cummulativeStorage: 0,
+                            availableStorage: 0
+                        }
+                        spd.call('/hostdb/active')
+                            .then((hostdata) => {
+                                let hosts = hostdata.hosts;
+                                returnData.hostCount = hosts.length;
+                                for (var i = 0; i < hosts.length; i++) {
+                                    returnData.availableStorage += hosts[i].remainingstorage;
+                                    returnData.cummulativeStorage += hosts[i].totalstorage;
+                                }
+                                resolve(returnData);
+                            })
+                    })
+            })
+    })
+}
+
 module.exports = {
     getTx,
     getAddress,
@@ -110,5 +139,6 @@ module.exports = {
     getLastIndexed,
     getAddressesBetweenBlocks,
     formatBytes,
-    resetDatabase
+    resetDatabase,
+    getNetworkInfo
 }
