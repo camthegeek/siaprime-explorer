@@ -1,0 +1,12 @@
+@Import "Header";
+
+.App {
+    background: #b8b8b8;
+}
+.footer {
+    padding: 20px;
+    background: #a19191;
+}
+.difficulty {
+    font-size: 120%;
+}
