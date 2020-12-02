@@ -143,6 +143,12 @@ async function getNetworkInfo() {
     })
 }
 
+async function getLastBlocks(amount) { 
+    return new Promise((resolve) => {
+        resolve(knex('blocks').select('*').orderBy('height', 'desc').limit(amount));
+    })
+}
+
 module.exports = {
     getTx,
     getAddress,
@@ -155,5 +161,6 @@ module.exports = {
     formatBytes,
     resetDatabase,
     getNetworkInfo,
-    getCoinValue
+    getCoinValue,
+    getLastBlocks
 }
