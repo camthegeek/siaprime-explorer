@@ -1,5 +1,6 @@
 import React, {Component} from "react";
 import {Link} from 'react-router-dom';
+import { Check, Box } from 'react-bootstrap-icons';
 
 class LastBlocks extends Component {
     render() {
@@ -9,14 +10,15 @@ class LastBlocks extends Component {
                 <div class="card-body">
                 <h3 className="card-title">Last 10 Blocks</h3>
                 <table className="overflow-auto">
-                    <td>Height</td>
-                    <td>Datetime</td>
-                    <td>Maturity</td>
+                <td>Maturity</td>
+                <td>Height</td>
+                <td>Datetime</td>
+                    
                 {this.props.woot.lastblocks.map((block) => 
                 <tr>
-                <td><Link to={`/block/${block.height}`} key={block.height}>{block.height}</Link></td>
-                <td>{new Intl.DateTimeFormat('en-US', {year: 'numeric', month: '2-digit',day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'}).format(`${block.timestamp}`*1000)} </td>
-                <td> {(Number(`${this.props.woot.netdata.current_block}`)-(Number(`${block.height}`)))}</td>
+                    <td>{(Number(`${this.props.woot.netdata.current_block}`)-(Number(`${block.height}`))) > 72 ? <Box color="green" size={24} /> : <Box color="red" size={24} /> } </td>
+                    <td><Link to={`/block/${block.height}`} key={block.height}>{block.height}</Link></td>
+                    <td>{new Intl.DateTimeFormat('en-US', {year: 'numeric', month: '2-digit',day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'}).format(`${block.timestamp}`*1000)} </td>
                 </tr>
                 
                 )}
