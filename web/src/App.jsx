@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import './Stylesheets/App.css';
 import Container from "./Components/Container";
 import axios from 'axios';
+import config from './config.json'
 
 class App extends Component {
   state = {
@@ -12,7 +13,7 @@ class App extends Component {
     lastblocks: [],
 }
 componentDidMount() {
-    axios.get('http://192.168.1.2:42424/api/health')
+    axios.get('http://'+config.api.url+':'+config.api.port+'/api/health')
         .then(blockStuff => {
             let hr = getReadableHashRateString(blockStuff.data.difficulty / blockStuff.data.blockfrequency);
             let sb = getReadableStorageString(blockStuff.data.totalStorage);
@@ -28,7 +29,7 @@ componentDidMount() {
             console.log(err);
         })
 
-        axios.get('http://192.168.1.2:42424/api/last/10')
+        axios.get('http://'+config.api.url+':'+config.api.port+'/api/last/10')
         .then(lastBlocks => {
             this.setState({
                 lastblocks: lastBlocks.data
