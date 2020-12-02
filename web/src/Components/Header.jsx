@@ -5,6 +5,7 @@ import { Navbar, NavbarBrand, Nav } from 'react-bootstrap';
 class Header extends Component {
     render() {
         return (
+            <header>
             <Navbar bg="light" expand="lg">
                 <NavbarBrand href="/">ScPrime Explorer</NavbarBrand>
                 <Navbar.Toggle aria-controls="basic-navbar-nav" />
@@ -18,6 +19,7 @@ class Header extends Component {
                 <Search/>
                 </Navbar.Collapse>
             </Navbar>
+            </header>
         )
     }
 }
