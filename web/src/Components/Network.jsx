@@ -1,31 +1,8 @@
 import { Component } from 'react';
-import axios from 'axios';
+
 import { Wallet2, Hdd, HddFill, PeopleFill, Justify, BarChartFill, Server } from 'react-bootstrap-icons';
 
 class NetworkData extends Component {
-    state = {
-        netdata: [],
-        hashrate: '',
-        totalStorage: '',
-        usedStorage: '',
-    }
-    componentDidMount() {
-        axios.get('http://localhost:42424/api/health')
-            .then(blockStuff => {
-                let hr = getReadableHashRateString(blockStuff.data.difficulty / blockStuff.data.blockfrequency);
-                let sb = getReadableStorageString(blockStuff.data.totalStorage);
-                let us = getReadableStorageString(blockStuff.data.usedStorage);
-                this.setState({
-                    netdata: blockStuff.data,
-                    hashrate: hr,
-                    totalStorage: sb,
-                    usedStorage: us,
-                })
-            }).catch((err) => { 
-                console.log(err);
-            })
-    }
-
     render() {
         return (
             <div class="container-fluid">
@@ -46,7 +23,7 @@ class NetworkData extends Component {
                                             <Justify className="float-left" size={32}/>
                                         </div>
                                         <div class="media-body text-right float-right">
-                                            <h4 className="font-weight-bold">{this.state.netdata.current_block}</h4> <span>Blockchain Height</span>
+                                            <h4 className="font-weight-bold">{this.props.data.netdata.current_block}</h4> <span>Blockchain Height</span>
                                         </div>
                                     </div>
                                 </div>
@@ -63,7 +40,7 @@ class NetworkData extends Component {
                                             <BarChartFill className="float-left" size={32} />
                                         </div>
                                         <div class="media-body text-right float-right">
-                                            <h4 className="font-weight-bold">{this.state.hashrate}</h4> <span>Hashrate</span>
+                                            <h4 className="font-weight-bold">{this.props.data.hashrate}</h4> <span>Hashrate</span>
                                         </div>
                                     </div>
                                 </div>
@@ -81,7 +58,7 @@ class NetworkData extends Component {
                                             <Wallet2 className="float-left" size={32} />
                                         </div>
                                         <div class="media-body text-right float-right">
-                                            <h4 className="font-weight-bold">{this.state.netdata.btcValue}</h4> <span>Bitcoin Value</span>
+                                            <h4 className="font-weight-bold">{this.props.data.netdata.btcValue}</h4> <span>Bitcoin Value</span>
                                         </div>
                                     </div>
                                 </div>
@@ -98,7 +75,7 @@ class NetworkData extends Component {
                                             <PeopleFill className="float-left" size={32} />
                                         </div>
                                         <div class="media-body text-right float-right">
-                                            <h4 className="font-weight-bold">{this.state.netdata.hostCount}</h4> <span>Total Hosts</span>
+                                            <h4 className="font-weight-bold">{this.props.data.netdata.hostCount}</h4> <span>Total Hosts</span>
                                         </div>
                                     </div>
                                 </div>
@@ -115,7 +92,7 @@ class NetworkData extends Component {
                                             <Hdd className="float-left" size={32} />
                                         </div>
                                         <div class="media-body text-right float-right">
-                                            <h4 className="font-weight-bold">{this.state.totalStorage}</h4> <span>Total Storage</span>
+                                            <h4 className="font-weight-bold">{this.props.data.totalStorage}</h4> <span>Total Storage</span>
                                         </div>
                                     </div>
                                 </div>
@@ -132,7 +109,7 @@ class NetworkData extends Component {
                                             <HddFill className="float-left" size={32} />
                                         </div>
                                         <div class="media-body text-right float-right">
-                                            <h4 className="font-weight-bold">{this.state.usedStorage}</h4> <span>Used Storage</span>
+                                            <h4 className="font-weight-bold">{this.props.data.usedStorage}</h4> <span>Used Storage</span>
                                         </div>
                                     </div>
                                 </div>
@@ -147,23 +124,5 @@ class NetworkData extends Component {
     }
 }
 
-export function getReadableHashRateString(hr) {
-    var i = 0;
-    var byteUnits = [' H', ' KH', ' MH', ' GH', ' TH', ' PH'];
-    while (hr > 1000) {
-        hr = hr / 1000;
-        i++;
-    }
-    return hr.toFixed(2) + byteUnits[i];
-}
 
-export function getReadableStorageString(storage) {
-    var i = 0;
-    var byteUnits = [' bytes', ' KB', ' MB', ' GB', ' TB', ' PB'];
-    while (storage > 1024) {
-        storage = storage / 1024;
-        i++;
-    }
-    return storage.toFixed(2) + byteUnits[i];
-}
 export default NetworkData;
