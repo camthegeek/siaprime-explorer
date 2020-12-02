@@ -21,6 +21,8 @@ class NetworkData extends Component {
                     totalStorage: sb,
                     usedStorage: us,
                 })
+            }).catch((err) => { 
+                console.log(err);
             })
     }
 
