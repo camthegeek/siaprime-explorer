@@ -1,15 +1,11 @@
 const express = require('express');
 const app = express();
+const cors = require('cors');
 const support = require('./support.js');
 const config = require('../config.json');
 var cache = require('express-redis-cache')({ prefix: 'scpe' });
 var scprimecoinprecision = config.general.precision;
-
-app.use(function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    next();
-})
+app.use(cors());
 
 /* all my shit has this block when you start it up. :) */
 app.listen(config.api.port, () => {
