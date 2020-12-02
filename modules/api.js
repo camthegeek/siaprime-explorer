@@ -197,6 +197,14 @@ app.get('/api/health', async (req, res) => {
     });
 })
 
+
+app.get('/api/last/:amount', async(req, res) => {
+    let last10 = await support.getLastBlocks(req.params.amount);
+    console.log(last10);
+    res.send(last10);
+})
+
+
 /* when a user navigates to site.tld/ */
 app.get('/', (req, res) => {
     res.json({
