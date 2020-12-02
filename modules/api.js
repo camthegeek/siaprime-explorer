@@ -180,6 +180,7 @@ app.get('/api/health', async (req, res) => {
     let last_indexed = await support.getLastIndexed();
     let current_height = await support.getTopBlock();
     let netInfo = await support.getNetworkInfo();
+    let value = await support.getCoinValue();
     res.send({
         "current_block": netInfo.height, // this gets last block from spd
         "last_indexed": last_indexed, // this gets last block for sql
@@ -188,7 +189,10 @@ app.get('/api/health', async (req, res) => {
         "genesisTimestamp": netInfo.genesisTimestamp,
         "hostCount": netInfo.hostCount,
         "totalStorage": netInfo.cummulativeStorage,
-        "usedStorage": netInfo.cummulativeStorage-netInfo.availableStorage
+        "usedStorage": netInfo.cummulativeStorage-netInfo.availableStorage,
+        "usdValue": value.usd,
+        "btcValue": value.btc,
+        "eurValue": value.eur
 
     });
 })

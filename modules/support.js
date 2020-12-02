@@ -2,6 +2,7 @@ const config = require('../config.json');
 const sia = require('siaprime.js');
 const pg = require('pg');
 const { async } = require('@babel/runtime/regenerator');
+const axios = require('axios');
 const knex = require('knex')({
     client: 'postgresql',
     connection: {
@@ -100,6 +101,19 @@ function resetDatabase() {
     })
 }
 
+async function getCoinValue() { 
+    return new Promise((resolve) => { 
+        axios.get('https://api.coingecko.com/api/v3/simple/price?ids=siaprime-coin&vs_currencies=usd%2Cbtc%2Ceur&include_market_cap=false&include_24hr_vol=false&include_24hr_change=false&include_last_updated_at=false')
+        .then((market) => {
+            console.log(market.data['siaprime-coin']);
+            resolve(market.data['siaprime-coin']);
+        })
+        .catch((eeee) => {
+            console.log(eeee);
+        })
+    })
+}
+
 async function getNetworkInfo() {
     return new Promise((resolve) => {
         sia.connect(config.daemon.ip + ':' + config.daemon.port) // connect to daemon
@@ -140,5 +154,6 @@ module.exports = {
     getAddressesBetweenBlocks,
     formatBytes,
     resetDatabase,
-    getNetworkInfo
+    getNetworkInfo,
+    getCoinValue
 }
