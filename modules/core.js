@@ -31,6 +31,8 @@ function createBlockTable() {
             table.string('timestamp');  // block.rawblock.timestamp
             table.string('parentid', 64);   // block.rawblock.parentid
             table.decimal('totalcoins', 36, 0); // block.totalcoins
+            table.string('minerpayoutaddr', 76); // block.rawblock.minerpayouts[0].unlockhash
+            table.string('minerpayoutaddr2', 76); // block.rawblock.minerpayouts[1].unlockhash
             table.integer('minerpayoutcount');   // block.minerpayoutcount
             table.integer('transactioncount');   // block.transactioncount
             table.integer('siacoininputcount');  // block.siacoininputcount
@@ -55,7 +57,7 @@ function createBlockTable() {
             tx.integer('block_height');  // block.height
             tx.string('tx_hash', 64).primary();   // block.transactions.id
             tx.string('parent_block', 64); // block.trasactions.parent
-            tx.string('tx_type', 10);
+            tx.string('tx_type', 16);
             tx.string('tx_total');  // block.transactions.rawtransaction.siacoinoutputs
             tx.decimal('fees', 36, 0);
             tx.string('timestamp'); // block.rawblock.timestamp
@@ -86,6 +88,96 @@ function createBlockTable() {
             totals.integer('totalspf');
             totals.string('first_seen', 12);
             totals.string('last_seen', 12);
+        })
+        .createTable('hostAnnInfo', function(hai){
+            hai.string('txHash', 64).primary();
+            hai.string('hashSynonyms');
+            hai.integer('height');
+            hai.bigInteger('timestamp');
+            hai.decimal('fees', 36, 0);
+            hai.string('IP');
+            hai.index(['height'], 'IX_hai');
+        })
+        .createTable('contractInfo', function(ci){
+            ci.string('masterHash', 64).primary();
+            ci.string('contractId', 64);
+            ci.string('allowancePosting', 76);
+            ci.decimal('renterValue', 36, 0);
+            ci.string('collateralPosting', 76);
+            ci.decimal('hostValue', 36, 0);
+            ci.decimal('fees', 36, 0);
+            ci.integer('windowStart');
+            ci.integer('windowEnd');
+            ci.integer('revisionNum');
+            ci.decimal('originalFileSize', 24, 0);
+            ci.decimal('currentFileSize', 24, 0);
+            ci.string('validProof1Output', 64);
+            ci.string('validProof1Address', 76);
+            ci.decimal('validProof1Value', 36, 0);
+            ci.string('validProof2Output', 64);
+            ci.string('validProof2Address', 76);
+            ci.decimal('validProof2Value', 36, 0);
+            ci.string('missedProof1Output', 64);
+            ci.string('missedProof1Address', 76);
+            ci.decimal('missedProof1Value', 36, 0);
+            ci.string('missedProof2Output', 64);
+            ci.string('missedProof2Address', 76);
+            ci.decimal('missedProof2Value', 36, 0);
+            ci.integer('height');
+            ci.bigInteger('timestamp');
+            ci.string('status', 15);
+            ci.tinyint('renew');
+            ci.index(['height'], 'IX_ci');
+            ci.index(['contractId'], 'IX_ci1');
+            ci.index(['windowEnd'], 'IX_ci2');
+        })
+        .createTable('contractResolutions', function(cr){
+            cr.string('masterHash', 64).primary();
+            cr.string('contractId', 64);
+            cr.decimal('fees', 36, 0);
+            cr.string('result', 15);
+            cr.integer('height');
+            cr.bigInteger('timestamp');
+            cr.string('output0Address', 76);
+            cr.decimal('output0Value', 36, 0);
+            cr.string('output1Address', 76);
+            cr.decimal('output1Value', 36, 0);
+            cr.string('output2Address', 76);
+            cr.decimal('output2Value', 36, 0);
+            cr.index(['height'], 'IX_cr');
+            cr.index(['contractId'], 'IX_cr1');
+        })
+        .createTable('revisionInfo', function(rv){
+            rv.string('masterHash', 64).primary();
+            rv.string('contradId', 64);
+            rv.decimal('fees', 36, 0);
+            rv.integer('newRevisionNum');
+            rv.decimal('newFileSize', 24, 0);
+            rv.string('ValidProof1Address', 76);
+            rv.decimal('ValidProof1Value', 36, 0);
+            rv.string('ValidProof2Address', 76);
+            rv.decimal('ValidProof2Value', 36, 0);
+            rv.string('missedProof1Address', 76);
+            rv.decimal('missedProof1Value', 36, 0);
+            rv.string('missedProof2Address', 76);
+            rv.decimal('missedProof2Value', 36, 0);
+            rv.string('missedProof3Address', 76);
+            rv.decimal('missedProof3Value', 36, 0);
+            rv.integer('height');
+            rv.bigInteger('timestamp');
+            rv.string('hashSynonyms');
+            rv.index(['height'], 'IX_rv');
+            rv.index(['contractId'], 'IX_rv1');
+        })
+        .createTable('storageProofInfo', function(sp){
+            sp.string('masterHash', 64).primary();
+            sp.string('contractId', 64);
+            sp.string('hashSynonyms');
+            sp.integer('height');
+            sp.bigInteger('timestamp');
+            sp.decimal('fees', 36, 0);
+            sp.index(['height'], 'IX_sp');
+            sp.index(['contractId'], 'IX_sp1');
         })
         .then((created) => {
             console.log(created)
@@ -187,7 +279,17 @@ async function parseWholeBlock(blockInfo, height) {
         let transactions = blockInfo.block.transactions; // store all the block transactions in 1 temp variable
         let minerarbitrarydata = ''
         for (a = 0; a < transactions.length; a++) {
-            if ((transactions[a].rawtransaction.arbitrarydata).length > 0) { // if arbitrary data has something
+            if (transactions[a].rawtransaction.arbitrarydata.length > 0
+            && transactions[a].rawtransaction.filecontractrevisions.length == 0
+            && transactions[a].rawtransaction.filecontracts.length == 0
+            && transactions[a].rawtransaction.minerfees.length == 0
+            && transactions[a].rawtransaction.siacoininputs.length == 0
+            && transactions[a].rawtransaction.siacoinoutputs.length == 0
+            && transactions[a].rawtransaction.siafundinputs.length == 0
+            && transactions[a].rawtransaction.siafundoutputs.length == 0
+            && transactions[a].rawtransaction.storageproofs.length == 0
+            && transactions[a].rawtransaction.transactionsignatures.length == 0
+            ) { // if arbitrary data has something && everything else blank
                 minerarbitrarydata = transactions[a].rawtransaction.arbitrarydata; // assume it's arbitrarydata submitted by miner
             }
         }
@@ -199,6 +301,8 @@ async function parseWholeBlock(blockInfo, height) {
             blockInfo.block.rawblock.timestamp,
             blockInfo.block.rawblock.parentid,
             blockInfo.block.totalcoins,
+            blockInfo.block.rawblock.minerpayouts[0].unlockhash,
+            blockInfo.block.rawblock.minerpayouts[1].unlockhash,
             blockInfo.block.minerpayoutcount,
             blockInfo.block.transactioncount,
             blockInfo.block.siacoininputcount,
@@ -244,7 +348,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
         if ((transactions[t].rawtransaction.minerfees).length === 0) { // if minerfees does not have anything in it
             minerFees = 0; // set fee to zero
         }
-        if ((transactions[t].rawtransaction.siacoininputs).length === 0) { // if siacoinputs is empty
+        if ((transactions[t].rawtransaction.siacoininputs).length === 0 && transactions[t].height > 0) { // if siacoinputs is empty
             txType = 'coinbase'; // assume it's a mined block with reward tx. block reward tx is 300 scp per block but goes down 0.001 per block
             if (transactions[t].height < 290000) { // so when we get to this height, there's a base of 10scp per block
                 txTotal = baseCoinbase - (transactions[t].height * 0.001); // until then, do the math right.
@@ -281,16 +385,35 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 let totals3 = await calcTotals(addr, 'in', amt, txHeight, txhash);
             }
         } else { // if siacoininputs contains stuff..
-            if ((transactions[t].rawtransaction.siacoinoutputs).length === 0) {
+            if (transactions[t].rawtransaction.arbitrarydata.length > 0) {
                 txType = 'hostAnn';
-            } else {
-                txType = 'tx'; // mark it as a transaction
+            } 
+            if (transactions[t].siacoininputs.length != 0
+                && transactions[t].minerfees.length != 0
+                && transactions[t].filecontracts.length == 0
+                && transactions[t].filecontractrevisions.length == 0
+                && transactions[t].storageproofs.length == 0
+                && transactions[t].siafundinputs.length == 0 
+                && transactions[t].siafundoutputs.length == 0) {
+                txType = 'sctx'; // mark it as a sc transaction
+            }
+            if (transactions[t].rawtransaction.siafundinputs.length != 0 && transactions[t].rawtransactions.siacoininputs.length != 0) { // first condition detects that tx is SF involved. second condition the receiver tx
+                txType = 'sftx'; // mark it as a sf transaction
+            }
+            if (transactions[t].filecontracts.length != 0) {
+                txType = 'filecontract';
+            }
+            if (transactions[t].filecontractrevisions.length != 0) {
+                txType = 'contractrevision';
+            }
+            if (transactions[t].storageproofs.length != 0) {
+                txType = 'storageproof';
             }
             for (tt = 0; tt < transactions[t].rawtransaction.siacoinoutputs.length; tt++) {  // for each siacoinoutput. . 
                 txTotal += transactions[t].rawtransaction.siacoinoutputs[tt].value / scprimecoinprecision; // lets save how much each tx had in it
             }
         }
-        if (txType == 'tx') {
+        if (txType == 'sctx') {
             /* cycle through addresses */
             /*  we COULD technically use a function to do this so we're not copy/pasting code 3 times
                 but this block pretty much checks the json data for each address and sums up the total per address in the transaction.
@@ -350,6 +473,66 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             }
 
             addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
+        }
+        if (txType == 'sftx') {
+            let sfinputoutputsjson = transactions[t].siafundinputoutputs;
+            let siafundinputoutputs = Object.values(sfinputoutputsjson.reduce((cam, {unlockhash, value }) => {
+                cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
+                if (unlockhash == cam[unlockhash].unlockhash) {
+                    cam[unlockhash].total += parseInt(value);
+                }
+                return cam;
+            }));
+            for (s = 0; s < siafundinputoutputs.length; s++){
+                let addr = siafundinputoutputs[s].unlockhash;
+                let amt = siafundinputoutputs[s].total;
+                let txhash = transactions[t].id;
+                let txHeight = transactions[t].height;
+
+                addToAddress(addr, '-' + amt, txhash, 'out', txType, txHeight)
+                    .then((done) => {
+                        // do something
+                    })
+                    .catch((errors) => {
+                        console.log(errors);
+                    });
+            }
+            let sfoutputsjson = transactions[t].rawtransaction.siafundoutputs;
+            let siafundoutputs = Object.values(sfoutputsjson.reduce((cam, { unlockhash, value }) =>{
+                cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
+                if (unlockhash == cam[unlockhash].unlockhash) {
+                    cam[unlockhash].total += parseInt(value);
+                }
+                return cam;
+            }));
+            for (u = 0; u < siafundoutputs.length; u++) {
+                let addr = siafundoutputs[u].unlockhash;
+                let amt = siafundoutputs[u].total;
+                let txhash = transactions[t].id;
+                let txHeight = transactions[t].height;
+
+                addToAddress(addr, amt, txhash, 'in', txType, txHeight)
+                    .then((done) => {
+
+                    })
+                    .catch((errors) => {
+                        console.log(errors);
+                    })
+            }
+
+            addToTransactions(transactions[t].height, transactions[t].id, trasnactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
+        }
+        if (txType == 'filecontract'){
+
+        }
+        if (txType == 'contractrevision'){
+
+        }
+        if (txType == 'storageproof'){
+
+        }
+        if (txType == 'hostAnn'){
+            
         }
     }
 
@@ -480,9 +663,15 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
     }
 }
 
+async function processFileContracts(apiblock, n, height, timestamp){
+    // File contracts are composed of 3 transactions: a renter operation, a host operation and the contract formation (in this order). I am treating them 
+    // as 3 independent objects in the blockchain, even if the outputs of the first are just "intermediate addresses", as the renter's transactions are daisy chained
+    // into multiple file contracts in the same block
+
+}
 async function addToBlocks(height, hash, difficulty, estimatedhashrate,
     maturitytimestamp, timestamp, parentid,
-    totalcoins, minerpayoutcount, transactioncount, siacoininputcount,
+    totalcoins, minerpayoutaddr, minerpayoutaddr2, minerpayoutcount, transactioncount, siacoininputcount,
     siacoinoutputcount, filecontractcount, filecontractrevisioncount, storageproofcount,
     siafundinputcount, siafundoutputcount, minerfeecount, arbitrarydatacount,
     transactionsignaturecount, activecontractcost, activecontractcount, activecontractsize,
@@ -498,6 +687,8 @@ async function addToBlocks(height, hash, difficulty, estimatedhashrate,
             timestamp: timestamp,
             parentid: parentid,
             totalcoins: totalcoins,
+            minerpayoutaddr: minerpayoutaddr,
+            minerpayoutaddr2: minerpayoutaddr2,
             minerpayoutcount: minerpayoutcount,
             transactioncount: transactioncount,
             siacoininputcount: siacoininputcount,
