@@ -388,26 +388,34 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             if (transactions[t].rawtransaction.arbitrarydata.length > 0) {
                 txType = 'hostAnn';
             } 
-            if (transactions[t].siacoininputs.length != 0
-                && transactions[t].minerfees.length != 0
-                && transactions[t].filecontracts.length == 0
-                && transactions[t].filecontractrevisions.length == 0
-                && transactions[t].storageproofs.length == 0
-                && transactions[t].siafundinputs.length == 0 
-                && transactions[t].siafundoutputs.length == 0) {
-                txType = 'sctx'; // mark it as a sc transaction
+            if (transactions[t].siacoininputs) {
+                if (transactions[t].siacoininputs.length != 0
+                    && transactions[t].minerfees.length != 0
+                    && transactions[t].filecontracts.length == 0
+                    && transactions[t].filecontractrevisions.length == 0
+                    && transactions[t].storageproofs.length == 0
+                    && transactions[t].siafundinputs.length == 0 
+                    && transactions[t].siafundoutputs.length == 0) {
+                    txType = 'sctx'; // mark it as a sc transaction
+                }
             }
             if (transactions[t].rawtransaction.siafundinputs.length != 0 && transactions[t].rawtransactions.siacoininputs.length != 0) { // first condition detects that tx is SF involved. second condition the receiver tx
                 txType = 'sftx'; // mark it as a sf transaction
             }
-            if (transactions[t].filecontracts.length != 0) {
-                txType = 'filecontract';
+            if (transactions[t].filecontracts) {
+                if (transactions[t].filecontracts.length != 0) {
+                    txType = 'filecontract';
+                }
             }
-            if (transactions[t].filecontractrevisions.length != 0) {
-                txType = 'contractrevision';
+            if (transactions[t].filecontractrevisions) {
+                if (transactions[t].filecontractrevisions.length != 0) {
+                    txType = 'contractrevision';
+                }
             }
-            if (transactions[t].storageproofs.length != 0) {
-                txType = 'storageproof';
+            if (transactions[t].storageproofs) {         
+                if (transactions[t].storageproofs.length != 0) {
+                    txType = 'storageproof';
+                }
             }
             for (tt = 0; tt < transactions[t].rawtransaction.siacoinoutputs.length; tt++) {  // for each siacoinoutput. . 
                 txTotal += transactions[t].rawtransaction.siacoinoutputs[tt].value / scprimecoinprecision; // lets save how much each tx had in it
