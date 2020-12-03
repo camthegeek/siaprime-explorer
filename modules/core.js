@@ -400,7 +400,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 }
             }
             if (transactions[t].rawtransaction.siafundinputs) { 
-                if (transactions[t].rawtransaction.siafundinputs.length != 0 && transactions[t].rawtransactions.siacoininputs.length != 0) { // first condition detects that tx is SF involved. second condition the receiver tx
+                if (transactions[t].rawtransaction.siafundinputs.length != 0 && transactions[t].rawtransaction.siacoininputs.length != 0) { // first condition detects that tx is SF involved. second condition the receiver tx
                     txType = 'sftx'; // mark it as a sf transaction
                 }
             }
