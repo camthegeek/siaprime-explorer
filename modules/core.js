@@ -530,7 +530,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                     })
             }
 
-            addToTransactions(transactions[t].height, transactions[t].id, trasnactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
+            addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
         }
         if (txType == 'filecontract'){
 
