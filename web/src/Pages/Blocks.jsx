@@ -1,5 +1,6 @@
 import React, {Component} from "react";
 import axios from 'axios';
+import config from '../config.json';
 
 class BlockInfo extends Component {
     state = {
@@ -7,7 +8,7 @@ class BlockInfo extends Component {
         blockdata: '',
     }
     componentDidMount() {
-        axios.get('http://localhost:42424/api/block/'+this.state.blocktoQ)
+        axios.get('http://'+config.api.url+':'+config.api.port+'/api/block/'+this.state.blocktoQ)
             .then(blockStuff => {
                 console.log(blockStuff.data)
                 this.setState({
