@@ -149,7 +149,7 @@ function createBlockTable() {
         })
         .createTable('revisionInfo', function(rv){
             rv.string('masterHash', 64).primary();
-            rv.string('contradId', 64);
+            rv.string('contractId', 64);
             rv.decimal('fees', 36, 0);
             rv.integer('newRevisionNum');
             rv.decimal('newFileSize', 24, 0);
