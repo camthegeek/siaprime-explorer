@@ -10,9 +10,11 @@ class NetworkData extends Component {
                     <div class="col-12 mt-3 mb-1">
                         <h2 class="card-title">
                             <Server className="float-left" size={32}/>
-                        Network Stats</h2>
+                            Network Stats
+                        </h2>
                     </div>
                 </div>
+                
                 <div class="row">
                     <div class="col-xl-4 col-sm-6 col-12">
                         <div class="card network_stats mt-2">
@@ -47,7 +49,6 @@ class NetworkData extends Component {
                             </div>
                         </div>
                     </div>
-
 
                     <div class="col-xl-4 col-sm-6 col-12">
                         <div class="card network_stats mt-2">
@@ -118,11 +119,8 @@ class NetworkData extends Component {
                     </div>
                 </div>
             </div>
-
-
         )
     }
 }
-
 
 export default NetworkData;
