@@ -349,7 +349,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             minerFees = 0; // set fee to zero
         }
         if ((transactions[t].rawtransaction.siacoininputs).length === 0 && transactions[t].height > 0) { // if siacoinputs is empty
-            txType = 'coinbase'; // assume it's a mined block with reward tx. block reward tx is 300 scp per block but goes down 0.001 per block
+                txType = 'coinbase'; // assume it's a mined block with reward tx. block reward tx is 300 scp per block but goes down 0.001 per block
             if (transactions[t].height < 290000) { // so when we get to this height, there's a base of 10scp per block
                 txTotal = baseCoinbase - (transactions[t].height * 0.001); // until then, do the math right.
             } else { // otherwise.. 
@@ -384,44 +384,41 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                     });
                 let totals3 = await calcTotals(addr, 'in', amt, txHeight, txhash);
             }
-        } else { // if siacoininputs contains stuff..
-            if (transactions[t].rawtransaction.arbitrarydata.length > 0) {
+        } 
+        if (transactions[t].rawtransaction.arbitrarydata.length > 0) {
                 txType = 'hostAnn';
-            } 
-            if (transactions[t].siacoininputs) {
-                if (transactions[t].siacoininputs.length != 0
-                    && transactions[t].minerfees.length != 0
-                    && transactions[t].filecontracts.length == 0
-                    && transactions[t].filecontractrevisions.length == 0
-                    && transactions[t].storageproofs.length == 0
-                    && transactions[t].siafundinputs.length == 0 
-                    && transactions[t].siafundoutputs.length == 0) {
+        } 
+        if (transactions[t].rawtransaction.siacoininputs) {
+            if (transactions[t].rawtransaction.siacoininputs.length != 0
+                    && transactions[t].rawtransaction.filecontracts.length == 0
+                    && transactions[t].rawtransaction.filecontractrevisions.length == 0
+                    && transactions[t].rawtransaction.storageproofs.length == 0
+                    && transactions[t].rawtransaction.siafundinputs.length == 0 
+                    && transactions[t].rawtransaction.siafundoutputs.length == 0) {
                     txType = 'sctx'; // mark it as a sc transaction
-                }
             }
-            if (transactions[t].rawtransaction.siafundinputs) { 
-                if (transactions[t].rawtransaction.siafundinputs.length != 0 && transactions[t].rawtransaction.siacoininputs.length != 0) { // first condition detects that tx is SF involved. second condition the receiver tx
-                    txType = 'sftx'; // mark it as a sf transaction
-                }
+        }
+        if (transactions[t].rawtransaction.siafundinputs.length > 0 && transactions[t].siafundinputoutputs.length > 0) {
+            console.log(transactions[t].id +' identified as a sf tx');
+                 txType = 'sftx'; // mark it as a sf transaction
             }
-            if (transactions[t].filecontracts) {
-                if (transactions[t].filecontracts.length != 0) {
-                    txType = 'filecontract';
-                }
+        if (transactions[t].filecontracts) {
+            if (transactions[t].filecontracts.length != 0) {
+                txType = 'filecontract';
             }
-            if (transactions[t].filecontractrevisions) {
-                if (transactions[t].filecontractrevisions.length != 0) {
-                    txType = 'contractrevision';
-                }
+        }
+        if (transactions[t].filecontractrevisions) {
+            if (transactions[t].filecontractrevisions.length != 0) {
+                txType = 'contractrevision';
             }
-            if (transactions[t].storageproofs) {         
-                if (transactions[t].storageproofs.length != 0) {
+        }
+        if (transactions[t].storageproofs) {         
+            if (transactions[t].storageproofs.length != 0) {
                     txType = 'storageproof';
-                }
             }
-            for (tt = 0; tt < transactions[t].rawtransaction.siacoinoutputs.length; tt++) {  // for each siacoinoutput. . 
-                txTotal += transactions[t].rawtransaction.siacoinoutputs[tt].value / scprimecoinprecision; // lets save how much each tx had in it
-            }
+        }
+        for (tt = 0; tt < transactions[t].rawtransaction.siacoinoutputs.length; tt++) {  // for each siacoinoutput. . 
+            txTotal += transactions[t].rawtransaction.siacoinoutputs[tt].value / scprimecoinprecision; // lets save how much each tx had in it
         }
         if (txType == 'sctx') {
             /* cycle through addresses */
@@ -485,20 +482,26 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
         }
         if (txType == 'sftx') {
-            let sfinputoutputsjson = transactions[t].siafundinputoutputs;
-            let siafundinputoutputs = Object.values(sfinputoutputsjson.reduce((cam, {unlockhash, value }) => {
-                cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
-                if (unlockhash == cam[unlockhash].unlockhash) {
-                    cam[unlockhash].total += parseInt(value);
-                }
-                return cam;
-            }));
-            for (s = 0; s < siafundinputoutputs.length; s++){
-                let addr = siafundinputoutputs[s].unlockhash;
-                let amt = siafundinputoutputs[s].total;
+            console.log('processing sf stuff on ',transactions[t].id);
+            /*let siafundinputoutputs = transactions[t].siafundinputoutputs;
+            if (transactions[t].siafundinputoutputs.length > 1) { 
+                let sfinputoutputsjson = transactions[t].siafundinputoutputs;
+                siafundinputoutputs = Object.values(sfinputoutputsjson.reduce((cam, {unlockhash, value, claimstart}) => {
+                    cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0, claimstart };
+                    if (unlockhash == cam[unlockhash].unlockhash) {
+                        cam[unlockhash].total += parseInt(value);
+                    }
+                    return cam;
+                }));
+            }*/
+
+            for (s = 0; s < transactions[t].siafundinputoutputs.length; s++){
+                //console.log(siafundinputoutputs);
+                let addr = transactions[t].siafundinputoutputs[s].unlockhash;
+                let amt = transactions[t].siafundinputoutputs[s].value;
                 let txhash = transactions[t].id;
                 let txHeight = transactions[t].height;
-
+                console.log('inserting values for spf stuff. addr: '+addr+ ' with amt: '+amt+' on height: '+txHeight)
                 addToAddress(addr, '-' + amt, txhash, 'out', txType, txHeight)
                     .then((done) => {
                         // do something
