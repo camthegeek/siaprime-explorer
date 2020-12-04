@@ -217,7 +217,7 @@ function startSync(startHeight) { // start synchronizing blocks from startHeight
                         setTimeout(startUp, 60000); // run startUp once if heights ~1 block difference or even. startUp loops back around to startSync..
                         //return; // lets not do a damn thing at all.
                     } else {
-                        getBlocks(spd, topHeight, startHeight+1); // lets start processing the blocks starting at startHeight until we reach topHeight
+                        getBlocks(spd, topHeight, Number(startHeight)+1); // lets start processing the blocks starting at startHeight until we reach topHeight
                     }
                 })
                 .catch((error) => {  // if there's an error. . . 
