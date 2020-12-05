@@ -748,83 +748,158 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             })
         })
     }
-    async function calcTotals(address, direction, amountscp, height, tx_hash) {
+    async function calcTotals(address, direction, amount, height, tx_hash, tx_type) {
         return new Promise((resolve) => {
             knex('address_totals')
                 .select('*')
                 .where('address', address)
                 .then((success) => {
-                    console.log('attempting totals: ' + address + 'balance: ' + amountscp / scprimecoinprecision)
                     if (success.length === 0) {
                         console.log('Address ' + address + ' was not found, adding on height', height)
-                        if (direction == 'in') {
-                            knex('address_totals')
-                                .insert({
-                                    address: address,
-                                    totalscp: amountscp,
-                                    first_seen: height,
-                                    last_seen: height
-                                })
-                                .then((added) => {
-                                    console.log('Added ' + address + ' with amount ' + amountscp / scprimecoinprecision);
-                                    resolve('added');
-                                })
-                                .catch((error) => {
-                                    console.log(error);
-                                })
-                            }
-                            if (direction == 'out') {
-                                knex('address_totals')
-                                    .insert({
-                                        address: address,
-                                        totalscp: '-'+amountscp,
-                                        first_seen: height,
-                                        last_seen: height
-                                    })
-                                    .then((added) => {
-                                        console.log('Added ' + address + ' with amount ' + amountscp / scprimecoinprecision);
-                                        resolve('added');
-                                    })
-                                    .catch((error) => {
-                                        console.log(error);
-                                    })
-                            }
+                        switch (tx_type) {
+                            case 'scp':
+                                if (direction == 'in') {
+                                    knex('address_totals')
+                                        .insert({
+                                            address: address,
+                                            totalscp: amount,
+                                            first_seen: height,
+                                            last_seen: height
+                                        })
+                                        .then((added) => {
+                                            console.log('Added ' + address + ' with amount ' + amount / scprimecoinprecision);
+                                            resolve('added');
+                                        })
+                                        .catch((error) => {
+                                            console.log(error);
+                                        })
+                                }
+                                if (direction == 'out') {
+                                    knex('address_totals')
+                                        .insert({
+                                            address: address,
+                                            totalscp: '-' + amount,
+                                            first_seen: height,
+                                            last_seen: height
+                                        })
+                                        .then((added) => {
+                                            console.log('Added ' + address + ' with amount ' + amount / scprimecoinprecision);
+                                            resolve('added');
+                                        })
+                                        .catch((error) => {
+                                            console.log(error);
+                                        })
+                                }
+                            break;
 
+                            case 'spf':
+                                if (direction == 'in') {
+                                    knex('address_totals')
+                                        .insert({
+                                            address: address,
+                                            totalspf: amount,
+                                            first_seen: height,
+                                            last_seen: height
+                                        })
+                                        .then((added) => {
+                                            console.log('Added ' + address + ' with amount ' + amount );
+                                            resolve('added');
+                                        })
+                                        .catch((error) => {
+                                            console.log(error);
+                                        })
+                                }
+                                if (direction == 'out') {
+                                    knex('address_totals')
+                                        .insert({
+                                            address: address,
+                                            totalspf: '-' + amount,
+                                            first_seen: height,
+                                            last_seen: height
+                                        })
+                                        .then((added) => {
+                                            console.log('Added ' + address + ' with amount ' + amount);
+                                            resolve('added');
+                                        })
+                                        .catch((error) => {
+                                            console.log(error);
+                                        })
+                                }
+                             break;
+                        }
                     } else {
-                        console.log('Address ' + address + ' already exists, updating.')
-                        let currentamount = Number(success[0].totalscp);
-                        console.log('Address ', address, ' already found with a balance of ', currentamount);
-                        let converted = amountscp;
-                        if (direction == 'in') {
-                            let added = (currentamount + converted);
-                            console.log('Incrementing ' + address + ' by ' + amountscp / scprimecoinprecision);
-                            knex('address_totals')
-                                .where('address', address)
-                                .update({
-                                    'totalscp': added,
-                                    'last_seen': height
-                                })
-                                .then(resolve('updated'))
-                                .catch((error) => {
-                                    console.log(error);
-                                });
+                        switch (tx_type) {
+                            case 'scp':
+                                console.log('[SCP] Address ' + address + ' already exists, updating.')
+                                let currentamount = Number(success[0].totalscp);
+                                let converted = amount;
+                                if (direction == 'in') {
+                                    let added = (currentamount + converted);
+                                    console.log('[SCP] Incrementing ' + address + ' by ' + amount / scprimecoinprecision);
+                                    knex('address_totals')
+                                        .where('address', address)
+                                        .update({
+                                            'totalscp': added,
+                                            'last_seen': height
+                                        })
+                                        .then(resolve('updated'))
+                                        .catch((error) => {
+                                            console.log(error);
+                                        });
+                                }
+                                if (direction == 'out') {
+                                    let removed = currentamount - converted;
+                                    console.log('[SCP] Decreasing ' + address + ' by ' + amount / scprimecoinprecision);
+                                    knex('address_totals')
+                                        .where('address', address)
+                                        .update({
+                                            'totalscp': removed,
+                                            "last_seen": height
+                                        })
+                                        .then(resolve('updated'))
+                                        .catch((error) => {
+                                            console.log(error);
+                                        })
+                                }
+                             break;
+
+                            case 'spf':
+                                console.log('[SPF] Address ' + address + ' already exists, updating.')
+                                let currentamount = Number(success[0].totalspf);
+                                let converted = amount;
+                                if (direction == 'in') {
+                                    let added = (currentamount + converted);
+                                    console.log('[SPF] Incrementing ' + address + ' by ' + amount);
+                                    knex('address_totals')
+                                        .where('address', address)
+                                        .update({
+                                            'totalspf': added,
+                                            'last_seen': height
+                                        })
+                                        .then(resolve('updated'))
+                                        .catch((error) => {
+                                            console.log(error);
+                                        });
+                                }
+                                if (direction == 'out') {
+                                    let removed = currentamount - converted;
+                                    console.log('[SPF] Decreasing ' + address + ' by ' + amount);
+                                    knex('address_totals')
+                                        .where('address', address)
+                                        .update({
+                                            'totalspf': removed,
+                                            "last_seen": height
+                                        })
+                                        .then(resolve('updated'))
+                                        .catch((error) => {
+                                            console.log(error);
+                                        })
+                                }
+
+                                break;
                         }
-                        if (direction == 'out') {
-                            let removed = currentamount - converted;
-                            console.log('Starting amount: ', currentamount);
-                            console.log('Decreasing ' + address + ' by ' + amountscp / scprimecoinprecision);
-                            console.log('new amount', removed);
-                            knex('address_totals')
-                                .where('address', address)
-                                .update({
-                                    'totalscp': removed,
-                                    "last_seen": height
-                                })
-                                .then(resolve('updated'))
-                                .catch((error) => {
-                                    console.log(error);
-                                })
-                        }
+
+
                     }
                 })
                 .catch((error) => {
