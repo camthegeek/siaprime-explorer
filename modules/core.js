@@ -385,7 +385,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                     .catch((errors) => {
                         console.log(errors);
                     });
-                let totals3 = await calcTotals(addr, 'in', amt, txHeight, txhash);
+                let totals3 = await calcTotals(addr, 'in', amt, txHeight, txhash, txType);
             }
         } 
         if (transactions[t].rawtransaction.arbitrarydata.length > 0) {
@@ -451,7 +451,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                     .catch((errors) => {
                         console.log(errors);
                     });
-                let totals2 = await calcTotals(addr, 'out', amt, txHeight, txhash);
+                let totals2 = await calcTotals(addr, 'out', amt, txHeight, txhash, txType);
             }
 
             /*  we COULD technically use a function to do this so we're not copy/pasting code 3 times
@@ -479,7 +479,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                     .catch((errors) => {
                         console.log(errors);
                     });
-                let totals1 = await calcTotals(addr, 'in', amt, txHeight, txhash);
+                let totals1 = await calcTotals(addr, 'in', amt, txHeight, txhash, txType);
             }
 
             addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
@@ -534,6 +534,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                     .catch((errors) => {
                         console.log(errors);
                     })
+                let totalspfs = await calcTotals(addr, 'in', amt, txHeight, txhash, txType);
             }
 
             addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
