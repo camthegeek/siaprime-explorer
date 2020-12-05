@@ -486,55 +486,36 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
         }
         if (txType == 'sftx') {
             console.log('processing sf stuff on ',transactions[t].id);
-            /*let siafundinputoutputs = transactions[t].siafundinputoutputs;
-            if (transactions[t].siafundinputoutputs.length > 1) { 
-                let sfinputoutputsjson = transactions[t].siafundinputoutputs;
-                siafundinputoutputs = Object.values(sfinputoutputsjson.reduce((cam, {unlockhash, value, claimstart}) => {
-                    cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0, claimstart };
-                    if (unlockhash == cam[unlockhash].unlockhash) {
-                        cam[unlockhash].total += parseInt(value);
-                    }
-                    return cam;
-                }));
-            }*/
-
             for (s = 0; s < transactions[t].siafundinputoutputs.length; s++){
-                //console.log(siafundinputoutputs);
-                let addr = transactions[t].siafundinputoutputs[s].unlockhash;
-                let amt = transactions[t].siafundinputoutputs[s].value;
-                let txhash = transactions[t].id;
-                let txHeight = transactions[t].height;
-                console.log('inserting values for spf stuff. addr: '+addr+ ' with amt: '+amt+' on height: '+txHeight)
-                addToAddress(addr, '-' + amt, txhash, 'out', txType, txHeight)
+                let addr_spf_out = transactions[t].siafundinputoutputs[s].unlockhash;
+                let amt_spf_out = transactions[t].siafundinputoutputs[s].value;
+                let txhash_spf_out = transactions[t].id;
+                let txHeight_spf_out = transactions[t].height;
+                console.log('inserting values for spf stuff. addr: '+addr_spf_out+ ' with amt: '+amt_spf_out+' on height: '+txHeight_spf_out)
+                addToAddress(addr_spf_out, '-' + amt_spf_out, txhash_spf_out, 'out', txType, txHeight_spf_out)
                     .then((done) => {
                         // do something
                     })
                     .catch((errors) => {
                         console.log(errors);
                     });
+                    let total_spf_out = await calcTotals(addr_spf_out, 'out', amt_spf_out, txHeight_spf_out, txhash_spf_out, txType);
             }
             let sfoutputsjson = transactions[t].rawtransaction.siafundoutputs;
-            let siafundoutputs = Object.values(sfoutputsjson.reduce((cam, { unlockhash, value }) =>{
-                cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
-                if (unlockhash == cam[unlockhash].unlockhash) {
-                    cam[unlockhash].total += parseInt(value);
-                }
-                return cam;
-            }));
-            for (u = 0; u < siafundoutputs.length; u++) {
-                let addr = siafundoutputs[u].unlockhash;
-                let amt = siafundoutputs[u].total;
-                let txhash = transactions[t].id;
-                let txHeight = transactions[t].height;
+            for (u = 0; u < sfoutputsjson.length; u++) {
+                let addr_spf = sfoutputsjson[u].unlockhash;
+                let amt_spf = sfoutputsjson[u].value;
+                let txhash_spf = transactions[t].id;
+                let txHeight_spf = transactions[t].height;
 
-                addToAddress(addr, amt, txhash, 'in', txType, txHeight)
+                addToAddress(addr_spf, amt_spf, txhash_spf, 'in', txType, txHeight_spf)
                     .then((done) => {
 
                     })
                     .catch((errors) => {
                         console.log(errors);
                     })
-                let totalspfs = await calcTotals(addr, 'in', amt, txHeight, txhash, txType);
+                let totalspf_in = await calcTotals(addr_spf, 'in', amt_spf, txHeight_spf, txhash_spf, txType);
             }
 
             addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
@@ -750,6 +731,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
         })
     }
     async function calcTotals(address, direction, amount, height, tx_hash, tx_type) {
+        console.log('attempt to calc totals for address ', address);
         return new Promise((resolve) => {
             knex('address_totals')
                 .select('*')
@@ -796,6 +778,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
 
                             case 'sftx':
                                 if (direction == 'in') {
+                                    console.log('[SPF] Attempt to added first time SF TX for address ', address);
                                     knex('address_totals')
                                         .insert({
                                             address: address,
@@ -820,7 +803,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                                             last_seen: height
                                         })
                                         .then((added) => {
-                                            console.log('[SPF] Added ' + address + ' with amount ' + amount);
+                                            console.log('[SPF] Address ' + address + ' sent amount ' + amount);
                                             resolve('added');
                                         })
                                         .catch((error) => {
@@ -869,9 +852,8 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                             case 'sftx':
                                 console.log('[SPF] Address ' + address + ' already exists, updating.')
                                 let currentamountspf = Number(success[0].totalspf);
-                                let convertedspf = amount;
                                 if (direction == 'in') {
-                                    let added = (currentamountspf + convertedspf);
+                                    let added = (currentamountspf + Number(amount));
                                     console.log('[SPF] Incrementing ' + address + ' by ' + amount);
                                     knex('address_totals')
                                         .where('address', address)
@@ -885,7 +867,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                                         });
                                 }
                                 if (direction == 'out') {
-                                    let removed = currentamountspf - convertedspf;
+                                    let removed = currentamountspf - Number(amount);
                                     console.log('[SPF] Decreasing ' + address + ' by ' + amount);
                                     knex('address_totals')
                                         .where('address', address)
