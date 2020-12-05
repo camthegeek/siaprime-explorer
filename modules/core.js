@@ -757,8 +757,9 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 .then((success) => {
                     if (success.length === 0) {
                         console.log('Address ' + address + ' was not found, adding on height', height)
-                        switch (tx_type) {
-                            case 'scp':
+                        switch(tx_type) {
+                            case 'sctx':
+                                case 'coinbase':
                                 if (direction == 'in') {
                                     knex('address_totals')
                                         .insert({
@@ -768,7 +769,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                                             last_seen: height
                                         })
                                         .then((added) => {
-                                            console.log('Added ' + address + ' with amount ' + amount / scprimecoinprecision);
+                                            console.log('[SCP] Added ' + address + ' with amount ' + amount / scprimecoinprecision);
                                             resolve('added');
                                         })
                                         .catch((error) => {
@@ -784,7 +785,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                                             last_seen: height
                                         })
                                         .then((added) => {
-                                            console.log('Added ' + address + ' with amount ' + amount / scprimecoinprecision);
+                                            console.log('[SCP] Added ' + address + ' with amount ' + amount / scprimecoinprecision);
                                             resolve('added');
                                         })
                                         .catch((error) => {
@@ -793,7 +794,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                                 }
                             break;
 
-                            case 'spf':
+                            case 'sftx':
                                 if (direction == 'in') {
                                     knex('address_totals')
                                         .insert({
@@ -803,7 +804,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                                             last_seen: height
                                         })
                                         .then((added) => {
-                                            console.log('Added ' + address + ' with amount ' + amount );
+                                            console.log('[SPF] Added ' + address + ' with amount ' + amount );
                                             resolve('added');
                                         })
                                         .catch((error) => {
@@ -819,7 +820,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                                             last_seen: height
                                         })
                                         .then((added) => {
-                                            console.log('Added ' + address + ' with amount ' + amount);
+                                            console.log('[SPF] Added ' + address + ' with amount ' + amount);
                                             resolve('added');
                                         })
                                         .catch((error) => {
@@ -830,12 +831,13 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                         }
                     } else {
                         switch (tx_type) {
-                            case 'scp':
+                            case 'sctx':
+                                case 'coinbase':
                                 console.log('[SCP] Address ' + address + ' already exists, updating.')
-                                let currentamount = Number(success[0].totalscp);
-                                let converted = amount;
+                                let currentamountscp = Number(success[0].totalscp);
+                                let convertedscp = amount;
                                 if (direction == 'in') {
-                                    let added = (currentamount + converted);
+                                    let added = (currentamountscp + convertedscp);
                                     console.log('[SCP] Incrementing ' + address + ' by ' + amount / scprimecoinprecision);
                                     knex('address_totals')
                                         .where('address', address)
@@ -849,7 +851,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                                         });
                                 }
                                 if (direction == 'out') {
-                                    let removed = currentamount - converted;
+                                    let removed = currentamountscp - convertedscp;
                                     console.log('[SCP] Decreasing ' + address + ' by ' + amount / scprimecoinprecision);
                                     knex('address_totals')
                                         .where('address', address)
@@ -864,12 +866,12 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                                 }
                              break;
 
-                            case 'spf':
+                            case 'sftx':
                                 console.log('[SPF] Address ' + address + ' already exists, updating.')
-                                let currentamount = Number(success[0].totalspf);
-                                let converted = amount;
+                                let currentamountspf = Number(success[0].totalspf);
+                                let convertedspf = amount;
                                 if (direction == 'in') {
-                                    let added = (currentamount + converted);
+                                    let added = (currentamountspf + convertedspf);
                                     console.log('[SPF] Incrementing ' + address + ' by ' + amount);
                                     knex('address_totals')
                                         .where('address', address)
@@ -883,7 +885,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                                         });
                                 }
                                 if (direction == 'out') {
-                                    let removed = currentamount - converted;
+                                    let removed = currentamountspf - convertedspf;
                                     console.log('[SPF] Decreasing ' + address + ' by ' + amount);
                                     knex('address_totals')
                                         .where('address', address)
