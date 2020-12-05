@@ -1,12 +1,11 @@
 import React, {Component} from "react";
 import {Link} from 'react-router-dom';
-import { Check, Box } from 'react-bootstrap-icons';
+import { Box } from 'react-bootstrap-icons';
 
 class LastBlocks extends Component {
     render() {
         return (
-            <div class="container-fluid">
-            <div className="row">
+
             <div className="col-xl-6 col-sm-6 col-12 mt-2 mb-2">
                 <div className="card">
                 <div class="card-body">
@@ -27,8 +26,6 @@ class LastBlocks extends Component {
                 </table>
                 </div>
                 </div>
-            </div>
-            </div>
             </div>
         )
     }

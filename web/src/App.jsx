@@ -11,6 +11,7 @@ class App extends Component {
     totalStorage: '',
     usedStorage: '',
     lastblocks: [],
+    lasttx: []
 }
 componentDidMount() {
     axios.get('http://'+config.api.url+':'+config.api.port+'/api/health')
@@ -29,10 +30,19 @@ componentDidMount() {
             console.log(err);
         })
 
-        axios.get('http://'+config.api.url+':'+config.api.port+'/api/last/10')
+        axios.get('http://'+config.api.url+':'+config.api.port+'/api/last/10/blocks')
         .then(lastBlocks => {
             this.setState({
                 lastblocks: lastBlocks.data
+            })
+        }).catch((err) => { 
+            console.log(err);
+        })
+
+        axios.get('http://'+config.api.url+':'+config.api.port+'/api/last/10/tx')
+        .then(lastTxs => {
+            this.setState({
+              lasttx: lastTxs.data
             })
         }).catch((err) => { 
             console.log(err);
