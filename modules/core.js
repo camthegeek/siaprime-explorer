@@ -89,98 +89,98 @@ function createBlockTable() {
             totals.string('first_seen', 12);
             totals.string('last_seen', 12);
         })
-        .createTable('hostAnnInfo', function(hai){
-            hai.string('txHash', 64).primary();
-            hai.string('hashSynonyms');
+        .createTable('host_info', function(hai){
+            hai.string('tx_hash', 64).primary();
+            hai.string('hash_syn');
             hai.integer('height');
             hai.bigInteger('timestamp');
             hai.decimal('fees', 36, 0);
-            hai.string('IP');
+            hai.string('ip');
             hai.index(['height'], 'IX_hai');
         })
-        .createTable('contractInfo', function(ci){
-            ci.string('masterHash', 64).primary();
-            ci.string('contractId', 64);
-            ci.string('allowancePosting', 76);
-            ci.decimal('renterValue', 36, 0);
-            ci.string('collateralPosting', 76);
-            ci.decimal('hostValue', 36, 0);
+        .createTable('contracts', function(ci){
+            ci.string('master_hash', 64).primary();
+            ci.string('contract_id', 64);
+            ci.string('allowance_posting', 76);
+            ci.decimal('renter_value', 36, 0);
+            ci.string('collateral_posting', 76);
+            ci.decimal('host_value', 36, 0);
             ci.decimal('fees', 36, 0);
-            ci.integer('windowStart');
-            ci.integer('windowEnd');
-            ci.integer('revisionNum');
-            ci.decimal('originalFileSize', 24, 0);
-            ci.decimal('currentFileSize', 24, 0);
-            ci.string('validProof1Output', 64);
-            ci.string('validProof1Address', 76);
-            ci.decimal('validProof1Value', 36, 0);
-            ci.string('validProof2Output', 64);
-            ci.string('validProof2Address', 76);
-            ci.decimal('validProof2Value', 36, 0);
-            ci.string('missedProof1Output', 64);
-            ci.string('missedProof1Address', 76);
-            ci.decimal('missedProof1Value', 36, 0);
-            ci.string('missedProof2Output', 64);
-            ci.string('missedProof2Address', 76);
-            ci.decimal('missedProof2Value', 36, 0);
-            ci.string('missedProof3Output', 64);
-            ci.string('missedProof3Address', 76);
-            ci.decimal('missedProof3Value', 36, 0);
+            ci.integer('window_start');
+            ci.integer('window_end');
+            ci.integer('revision_num');
+            ci.decimal('original_filesize', 24, 0);
+            ci.decimal('current_filesize', 24, 0);
+            ci.string('valid_proof1_output', 64);
+            ci.string('valid_proof1_address', 76);
+            ci.decimal('valid_proof1_value', 36, 0);
+            ci.string('valid_proof2_output', 64);
+            ci.string('valid_proof2_address', 76);
+            ci.decimal('valid_proof2_value', 36, 0);
+            ci.string('missed_proof1_output', 64);
+            ci.string('missed_proof1_address', 76);
+            ci.decimal('missed_proof1_value', 36, 0);
+            ci.string('missed_proof2_output', 64);
+            ci.string('missed_proof2_address', 76);
+            ci.decimal('missed_proof2_value', 36, 0);
+            ci.string('missed_proof3_output', 64);
+            ci.string('missed_proof3_address', 76);
+            ci.decimal('missed_proof3_value', 36, 0);
             ci.integer('height');
             ci.bigInteger('timestamp');
             ci.string('status', 15);
             ci.tinyint('renew');
             ci.index(['height'], 'IX_ci');
-            ci.index(['contractId'], 'IX_ci1');
-            ci.index(['windowEnd'], 'IX_ci2');
+            ci.index(['contract_id'], 'IX_ci1');
+            ci.index(['window_end'], 'IX_ci2');
         })
-        .createTable('contractResolutions', function(cr){
-            cr.string('masterHash', 64).primary();
-            cr.string('contractId', 64);
+        .createTable('resolutions', function(cr){
+            cr.string('master_hash', 64).primary();
+            cr.string('contract_id', 64);
             cr.decimal('fees', 36, 0);
             cr.string('result', 15);
             cr.integer('height');
             cr.bigInteger('timestamp');
-            cr.string('output0Address', 76);
-            cr.decimal('output0Value', 36, 0);
-            cr.string('output1Address', 76);
-            cr.decimal('output1Value', 36, 0);
-            cr.string('output2Address', 76);
-            cr.decimal('output2Value', 36, 0);
+            cr.string('output0_address', 76);
+            cr.decimal('output0_value', 36, 0);
+            cr.string('output1_address', 76);
+            cr.decimal('output1_value', 36, 0);
+            cr.string('output2_address', 76);
+            cr.decimal('output2_value', 36, 0);
             cr.index(['height'], 'IX_cr');
-            cr.index(['contractId'], 'IX_cr1');
+            cr.index(['contract_id'], 'IX_cr1');
         })
-        .createTable('revisionInfo', function(rv){
-            rv.string('masterHash', 64).primary();
-            rv.string('contractId', 64);
+        .createTable('revisions', function(rv){
+            rv.string('master_hash', 64).primary();
+            rv.string('contract_id', 64);
             rv.decimal('fees', 36, 0);
-            rv.integer('newRevisionNum');
-            rv.decimal('newFileSize', 24, 0);
-            rv.string('ValidProof1Address', 76);
-            rv.decimal('ValidProof1Value', 36, 0);
-            rv.string('ValidProof2Address', 76);
-            rv.decimal('ValidProof2Value', 36, 0);
-            rv.string('missedProof1Address', 76);
-            rv.decimal('missedProof1Value', 36, 0);
-            rv.string('missedProof2Address', 76);
-            rv.decimal('missedProof2Value', 36, 0);
-            rv.string('missedProof3Address', 76);
-            rv.decimal('missedProof3Value', 36, 0);
+            rv.integer('new_revision_num');
+            rv.decimal('new_filesize', 24, 0);
+            rv.string('valid_proof1_address', 76);
+            rv.decimal('valid_proof1_value', 36, 0);
+            rv.string('valid_proof2_address', 76);
+            rv.decimal('valid_proof2_value', 36, 0);
+            rv.string('missed_proof1_address', 76);
+            rv.decimal('missed_proof1_value', 36, 0);
+            rv.string('missed_proof2_address', 76);
+            rv.decimal('missed_proof2_value', 36, 0);
+            rv.string('missed_proof3_address', 76);
+            rv.decimal('missed_proof3_value', 36, 0);
             rv.integer('height');
             rv.bigInteger('timestamp');
-            rv.string('hashSynonyms');
+            rv.string('hash_syn');
             rv.index(['height'], 'IX_rv');
-            rv.index(['contractId'], 'IX_rv1');
+            rv.index(['contract_id'], 'IX_rv1');
         })
-        .createTable('storageProofInfo', function(sp){
-            sp.string('masterHash', 64).primary();
-            sp.string('contractId', 64);
-            sp.string('hashSynonyms');
+        .createTable('storageproofs', function(sp){
+            sp.string('master_hash', 64).primary();
+            sp.string('contract_id', 64);
+            sp.string('hash_syn');
             sp.integer('height');
             sp.bigInteger('timestamp');
             sp.decimal('fees', 36, 0);
             sp.index(['height'], 'IX_sp');
-            sp.index(['contractId'], 'IX_sp1');
+            sp.index(['contract_id'], 'IX_sp1');
         })
         .then((created) => {
             console.log(created)
@@ -389,6 +389,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             }
         } 
         if (transactions[t].rawtransaction.arbitrarydata.length > 0) {
+            console.log(transactions[t].id +' identified as a hostAnn');
                 txType = 'hostAnn';
         } 
         if (transactions[t].rawtransaction.siacoininputs) {
@@ -407,16 +408,19 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             }
         if (transactions[t].filecontracts) {
             if (transactions[t].filecontracts.length != 0) {
-                txType = 'filecontract';
+                console.log(transactions[t].id +' identified as a contract');
+                txType = 'contract';
             }
         }
         if (transactions[t].filecontractrevisions) {
             if (transactions[t].filecontractrevisions.length != 0) {
-                txType = 'contractrevision';
+                console.log(transactions[t].id +' identified as a revision');
+                txType = 'revision';
             }
         }
         if (transactions[t].storageproofs) {         
             if (transactions[t].storageproofs.length != 0) {
+                console.log(transactions[t].id +' identified as a storage proof');
                     txType = 'storageproof';
             }
         }
@@ -520,7 +524,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
 
             addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
         }
-        if (txType == 'filecontract'){
+        if (txType == 'contract'){
             let masterHash = transactions[t].id;
             let txHeight = trasnactions[t].height;
             let revisionNum = parseInt(transactions[t].rawtransaction.filecontracts[0].revisionnumber);
@@ -609,7 +613,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 missedProof1Output, missedProof1Address, missedProof1Value, missedProof2Output, missedProof2Address,
                 missedProof2Value, missedProof3Output, missedProof3Address, missedProof3Value, txHeight, timestamp * 1000, 'ongoing', renewBool)
         }
-        if (txType == 'contractrevision'){
+        if (txType == 'revision'){
 
         }
         if (txType == 'storageproof'){
@@ -653,34 +657,34 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
         missedProof1Output, missedProof1Address, missedProof1Value, missedProof2Output, missedProof2Address,
         missedProof2Value, missedProof3Output, missedProof3Address, missedProof3Value, height, timestamp, status, renew) {
         return new Promise((resolve) => {
-            knex('contractInfo').insert({
-                masterHash: masterHash,
-                contractId: contractId,
-                allowancePosting: allowancePosting,
-                renterValue: renterValue,
-                collateralPosting: collateralPosting,
-                hostValue: hostValue,
+            knex('contracts').insert({
+                master_hash: masterHash,
+                contract_id: contractId,
+                allowance_posting: allowancePosting,
+                renter_value: renterValue,
+                collateral_posting: collateralPosting,
+                host_value: hostValue,
                 fees: fees,
-                windowStart: windowStart,
-                windowEnd: windowEnd,
-                revisionNum: revisionNum,
-                originalFileSize: originalFileSize,
-                currentFileSize: currentFileSize,
-                validProof1Output: validProof1Output,
-                validProof1Address: validProof1Address,
-                validProof1Value: validProof1Value,
-                validProof2Output: validProof2Output,
-                validProof2Address: validProof2Address,
-                validProof2Value: validProof2Value,
-                missedProof1Output: missedProof1Output,
-                missedProof1Address: missedProof1Address,
-                missedProof1Value: missedProof1Value,
-                missedProof2Output: missedProof2Output,
-                missedProof2Address: missedProof2Address,
-                missedProof2Value: missedProof2Value,
-                missedProof3Output: missedProof3Output,
-                missedProof3Address: missedProof3Address,
-                missedProof3Value: missedProof3Value,
+                window_start: windowStart,
+                window_end: windowEnd,
+                revision_num: revisionNum,
+                original_filesize: originalFileSize,
+                current_filesize: currentFileSize,
+                valid_proof1_output: validProof1Output,
+                valid_proof1_address: validProof1Address,
+                valid_proof1_value: validProof1Value,
+                valid_proof2_output: validProof2Output,
+                valid_proof2_address: validProof2Address,
+                valid_proof2_value: validProof2Value,
+                missed_proof1_output: missedProof1Output,
+                missed_proof1_address: missedProof1Address,
+                missed_proof1_value: missedProof1Value,
+                missed_proof2_output: missedProof2Output,
+                missed_proof2_address: missedProof2Address,
+                missed_proof2_value: missedProof2Value,
+                missed_proof3_output: missedProof3Output,
+                missed_proof3_address: missedProof3Address,
+                missed_proof3_value: missedProof3Value,
                 height: height,
                 timestamp: timestamp,
                 status: status,
