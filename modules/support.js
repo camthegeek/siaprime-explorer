@@ -97,7 +97,7 @@ function formatBytes(bytes, decimals = 2) {
 
 function resetDatabase() {
     return new Promise((resolve) => {
-        resolve(knex.schema.dropTableIfExists('blocks').dropTableIfExists('transactions').dropTableIfExists('address_history').dropTableIfExists('address_totals').dropTableIfExists('hostAnnInfo').dropTableIfExists('contractInfo').dropTableIfExists('contractResolutions').dropTableIfExists('revisionInfo').dropTableIfExists('storageProofInfo'));
+        resolve(knex.schema.dropTableIfExists('blocks').dropTableIfExists('transactions').dropTableIfExists('address_history').dropTableIfExists('address_totals').dropTableIfExists('host_info').dropTableIfExists('contracts').dropTableIfExists('resolutions').dropTableIfExists('revisions').dropTableIfExists('storageproofs'));
     })
 }
 
