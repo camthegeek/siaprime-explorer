@@ -486,7 +486,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 let totals1 = await calcTotals(addr, 'in', amt, txHeight, txhash, txType);
             }
 
-            addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
+            let transacted = await addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
         }
         if (txType == 'sftx') {
             console.log('processing sf stuff on ',transactions[t].id);
@@ -522,7 +522,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 let totalspf_in = await calcTotals(addr_spf, 'in', amt_spf, txHeight_spf, txhash_spf, txType);
             }
 
-            addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
+            let transacted = await addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
         }
         if (txType == 'contract'){
             let masterHash = transactions[t].id;
@@ -604,7 +604,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             // TxID and contractID as a hash type (both can be searched as synonyms)
 
             // Tx inside a block (addToTransactions)
-            addToTransactions(txHeight, contractId, masterHash, txType, totalTransacted, minerFees, timestamp * 1000);
+            //addToTransactions(txHeight, contractId, masterHash, txType, totalTransacted, minerFees, timestamp * 1000);
 
             // Contract info insert
             addToContracts(masterHash, contractId, allowancePostingHash, renterAllowanceValue, collateralPostingHash, hostCollateralValue,
@@ -648,7 +648,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
         }
         // tx as a hash type
         // tx inside a block (addToTransactions)
-        addToTransactions(height, contractId, masterHash, linkId, totalTransacted, minerFees, timestamp * 1000)
+        let transacted = await addToTransactions(height, contractId, masterHash, linkId, totalTransacted, minerFees, timestamp * 1000)
         // tx info The field "synonyms" includes only the contractId to link this TX to the contract created
     }
     async function addToContracts(masterHash, contractId, allowancePosting, renterValue, collateralPosting, hostValue,
