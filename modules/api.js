@@ -125,11 +125,17 @@ app.get('/api/address/:addr', cache.route({ expire: 60 }), async (req, res) => {
 
 });
 /* api route for contract info */
-app.get('/api/contract/:contract', cache.route(), (req, res) => {
-    res.json({
-        "test": "fail"
-    });
-});
+app.get('/api/contract/:contract', (req, res) => {
+    console.log('contract api hit')
+    support.getContract(req.params.contract)
+        .then((contractData) => {
+            console.log(contractData)
+            res.send({
+                "data": contractData
+            })
+        })
+})
+
 
 /* api route for richlist lol */
 app.get(['/api/richlist/:type/:amount', '/api/richlist/:type'], cache.route(), (req, res) => {
