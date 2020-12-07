@@ -156,6 +156,14 @@ async function getLast(amount, type) {
     })
 }
 
+async function getContract(id) { 
+    console.log('attempting hash ', id)
+    return new Promise((resolve) => { 
+
+        resolve(knex('contracts').select('*').where('contract_id', id));
+    })
+}
+
 module.exports = {
     getTx,
     getAddress,
@@ -169,5 +177,6 @@ module.exports = {
     resetDatabase,
     getNetworkInfo,
     getCoinValue,
-    getLast
+    getLast,
+    getContract
 }
