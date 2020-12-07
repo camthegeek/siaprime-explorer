@@ -111,19 +111,14 @@ function createBlockTable() {
             ci.integer('revision_num');
             ci.decimal('original_filesize', 24, 0);
             ci.decimal('current_filesize', 24, 0);
-            ci.string('valid_proof1_output', 64);
             ci.string('valid_proof1_address', 76);
             ci.decimal('valid_proof1_value', 36, 0);
-            ci.string('valid_proof2_output', 64);
             ci.string('valid_proof2_address', 76);
             ci.decimal('valid_proof2_value', 36, 0);
-            ci.string('missed_proof1_output', 64);
             ci.string('missed_proof1_address', 76);
             ci.decimal('missed_proof1_value', 36, 0);
-            ci.string('missed_proof2_output', 64);
             ci.string('missed_proof2_address', 76);
             ci.decimal('missed_proof2_value', 36, 0);
-            ci.string('missed_proof3_output', 64);
             ci.string('missed_proof3_address', 76);
             ci.decimal('missed_proof3_value', 36, 0);
             ci.integer('height');
@@ -537,57 +532,30 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 var renewBool = 1
             }
             let contractId = transactions[t].filecontractids[0]
-            // First, we identify the renter and the host transactions, and process them in a separate function
-            let link = [];
-            link[0] = transactions[t].rawtransaction.siacoininputs[0].parentid // renter tx
-            link[1] = transactions[t].rawtransaction.siacoininputs[1].parentid // host tx
 
-            // Finding the matching txs
-            for (i = 0; i <link.length; i++) { // for both links
-                let matchBool = false
-                for (m = 0; m < transactions.length; m++) { // iterate on each tx
-                    if (transactions[m].siacoinoutputids != null) { // to avoid errors, as some TXs dont have siacoinoutputs
-                        if (link[i] == transactions[m].siacoinoutputids[0]) {
-                            matchBool = true // boolean to mark we found the matching TX
-                            let linkId = ""
-                            if (i == 0) { // Renter TX
-                                linkId = "allowance" // Renter
-                            } else {
-                                linkId = "collateral" // Host
-                            }
-                            contractPreTx(transactions[m], txHeight, timestamp * 1000, linkId, contractId)
-                        }
-                    }
-                }
-                if (matchBool == false) {
-                    if (i == 0) { // Renter TX
-                        var allowancePostingHash = tranasctions[t].siacoininputoutputs[0].unlockhash
-                    } else { // Host TX
-                        var collateralPostingHash = transactions[t].siacoininputoutputs[1].unlockhash
-                    }
-                }
+            let allowancePostingHash = transactions[t].siacoininputoutputs[0].unlockhash
+            let collateralPostingHash = transactions[t].siacoininputoutputs[1].unlockhash
 
-            }
             let renterAllowanceValue = parseInt(transactions[t].siacoininputoutputs[0].value)
             let renterAllowanceSender = transactions[t].siacoininputoutputs[0].unlockhash
+
             let hostCollateralValue = parseInt(transactions[t].siacoininputoutputs[1].value)
             let hostCollateralSender = transactions[t].siacoininputoutputs[1].unlockhash
-            let totalTransacted = renterAllowanceValue + hostCollateralValue
+            //let totalTransacted = renterAllowanceValue + hostCollateralValue
 
             // storage proof results
-            let validProof1Output = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[0].id
             let validProof1Value = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[0].value
             let validProof1Address = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[0].unlockhash
-            let validProof2Output = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[1].id
+
             let validProof2Value = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[1].value
             let validProof2Address = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[1].unlockhash
-            let missedProof1Output = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[0].id
+            
             let missedProof1Value = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[0].value
             let missedProof1Address = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[0].unlockhash
-            let missedProof2Output = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[1].id
+
             let missedProof2Value = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[1].value
             let missedProof2Address = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[1].unlockhash
-            let missedProof3Output = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[2].id
+
             let missedProof3Value = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[2].value
             let missedProof3Address = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[2].unlockhash
 
@@ -608,10 +576,8 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
 
             // Contract info insert
             addToContracts(masterHash, contractId, allowancePostingHash, renterAllowanceValue, collateralPostingHash, hostCollateralValue,
-                minerFees, windowStart, windowEnd, revisionNum, fileSize, fileSize, validProof1Output,
-                validProof1Address, validProof1Value, validProof2Output, validProof2Address, validProof2Value,
-                missedProof1Output, missedProof1Address, missedProof1Value, missedProof2Output, missedProof2Address,
-                missedProof2Value, missedProof3Output, missedProof3Address, missedProof3Value, txHeight, timestamp * 1000, 'ongoing', renewBool)
+                minerFees, windowStart, windowEnd, revisionNum, fileSize, fileSize, validProof1Address, validProof1Value, validProof2Address, validProof2Value,
+                missedProof1Address, missedProof1Value, missedProof2Address, missedProof2Value, missedProof3Address, missedProof3Value, txHeight, timestamp * 1000, 'ongoing', renewBool)
         }
         if (txType == 'revision'){
 
@@ -623,7 +589,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
 
         }
     }
-    async function contractPreTx(tx, height, timestamp, linkId, contractId){
+    /*async function contractPreTx(tx, height, timestamp, linkId, contractId){
         let totalTransacted = 0
         let masterHash = tx.id
 
@@ -650,12 +616,13 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
         // tx inside a block (addToTransactions)
         let transacted = await addToTransactions(height, contractId, masterHash, linkId, totalTransacted, minerFees, timestamp * 1000)
         // tx info The field "synonyms" includes only the contractId to link this TX to the contract created
-    }
+    }*/
+
     async function addToContracts(masterHash, contractId, allowancePosting, renterValue, collateralPosting, hostValue,
-        fees, windowStart, windowEnd, revisionNum, originalFileSize, currentFileSize, validProof1Output,
-        validProof1Address, validProof1Value, validProof2Output, validProof2Address, validProof2Value,
-        missedProof1Output, missedProof1Address, missedProof1Value, missedProof2Output, missedProof2Address,
-        missedProof2Value, missedProof3Output, missedProof3Address, missedProof3Value, height, timestamp, status, renew) {
+        fees, windowStart, windowEnd, revisionNum, originalFileSize, currentFileSize, 
+        validProof1Address, validProof1Value, validProof2Address, validProof2Value,
+        missedProof1Address, missedProof1Value, missedProof2Address,
+        missedProof2Value, missedProof3Address, missedProof3Value, height, timestamp, status, renew) {
         return new Promise((resolve) => {
             knex('contracts').insert({
                 master_hash: masterHash,
@@ -670,19 +637,14 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 revision_num: revisionNum,
                 original_filesize: originalFileSize,
                 current_filesize: currentFileSize,
-                valid_proof1_output: validProof1Output,
                 valid_proof1_address: validProof1Address,
                 valid_proof1_value: validProof1Value,
-                valid_proof2_output: validProof2Output,
                 valid_proof2_address: validProof2Address,
                 valid_proof2_value: validProof2Value,
-                missed_proof1_output: missedProof1Output,
                 missed_proof1_address: missedProof1Address,
                 missed_proof1_value: missedProof1Value,
-                missed_proof2_output: missedProof2Output,
                 missed_proof2_address: missedProof2Address,
                 missed_proof2_value: missedProof2Value,
-                missed_proof3_output: missedProof3Output,
                 missed_proof3_address: missedProof3Address,
                 missed_proof3_value: missedProof3Value,
                 height: height,
