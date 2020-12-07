@@ -78,7 +78,7 @@ function createBlockTable() {
             addr.decimal('amount', null);
             addr.string('tx_hash', 64);
             addr.string('direction', 4);
-            addr.string('type', 10);
+            addr.string('type', 16);
             addr.integer('height');
             addr.index(['address', 'height'], 'richlist');
         })
@@ -406,8 +406,8 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             console.log(transactions[t].id +' identified as a sf tx');
                  txType = 'sftx'; // mark it as a sf transaction
             }
-        if (transactions[t].filecontracts) {
-            if (transactions[t].filecontracts.length != 0) {
+        if (transactions[t].rawtransaction.filecontracts) {
+            if (transactions[t].rawtransaction.filecontracts.length != 0) {
                 console.log(transactions[t].id +' identified as a contract');
                 txType = 'contract';
             }
@@ -526,7 +526,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
         }
         if (txType == 'contract'){
             let masterHash = transactions[t].id;
-            let txHeight = trasnactions[t].height;
+            let txHeight = transactions[t].height;
             let revisionNum = parseInt(transactions[t].rawtransaction.filecontracts[0].revisionnumber);
             let windowStart = parseInt(transactions[t].rawtransaction.filecontracts[0].windowstart); // block that opens the window for submitting the storage proof
             let windowEnd = parseInt(transactions[t].rawtransaction.filecontracts[0].windowend);
@@ -551,9 +551,9 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                             matchBool = true // boolean to mark we found the matching TX
                             let linkId = ""
                             if (i == 0) { // Renter TX
-                                linkId = "allowancePost" // Renter
+                                linkId = "allowance" // Renter
                             } else {
-                                linkId = "collateralPost" // Host
+                                linkId = "collateral" // Host
                             }
                             contractPreTx(transactions[m], txHeight, timestamp * 1000, linkId, contractId)
                         }
