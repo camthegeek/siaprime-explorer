@@ -101,9 +101,9 @@ function createBlockTable() {
         .createTable('contracts', function(ci){
             ci.string('master_hash', 64).primary();
             ci.string('contract_id', 64);
-            ci.string('allowance_posting', 76);
+            ci.string('allowance_addr', 76);
             ci.decimal('renter_value', 36, 0);
-            ci.string('collateral_posting', 76);
+            ci.string('collateral_addr', 76);
             ci.decimal('host_value', 36, 0);
             ci.decimal('fees', 36, 0);
             ci.integer('window_start');
@@ -627,9 +627,9 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             knex('contracts').insert({
                 master_hash: masterHash,
                 contract_id: contractId,
-                allowance_posting: allowancePosting,
+                allowance_addr: allowancePosting,
                 renter_value: renterValue,
-                collateral_posting: collateralPosting,
+                collateral_addr: collateralPosting,
                 host_value: hostValue,
                 fees: fees,
                 window_start: windowStart,
