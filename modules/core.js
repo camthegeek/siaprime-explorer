@@ -481,7 +481,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 let totals1 = await calcTotals(addr, 'in', amt, txHeight, txhash, txType);
             }
 
-            let transacted = await addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
+            let transacted = await addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp);
         }
         if (txType == 'sftx') {
             console.log('processing sf stuff on ',transactions[t].id);
@@ -517,7 +517,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 let totalspf_in = await calcTotals(addr_spf, 'in', amt_spf, txHeight_spf, txhash_spf, txType);
             }
 
-            let transacted = await addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp * 1000);
+            let transacted = await addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp);
         }
         if (txType == 'contract'){
             let masterHash = transactions[t].id;
@@ -572,12 +572,12 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             // TxID and contractID as a hash type (both can be searched as synonyms)
 
             // Tx inside a block (addToTransactions)
-            //addToTransactions(txHeight, contractId, masterHash, txType, totalTransacted, minerFees, timestamp * 1000);
+            //addToTransactions(txHeight, contractId, masterHash, txType, totalTransacted, minerFees, timestamp);
 
             // Contract info insert
             addToContracts(masterHash, contractId, allowancePostingHash, renterAllowanceValue, collateralPostingHash, hostCollateralValue,
                 minerFees, windowStart, windowEnd, revisionNum, fileSize, fileSize, validProof1Address, validProof1Value, validProof2Address, validProof2Value,
-                missedProof1Address, missedProof1Value, missedProof2Address, missedProof2Value, missedProof3Address, missedProof3Value, txHeight, timestamp * 1000, 'ongoing', renewBool)
+                missedProof1Address, missedProof1Value, missedProof2Address, missedProof2Value, missedProof3Address, missedProof3Value, txHeight, timestamp, 'ongoing', renewBool)
         }
         if (txType == 'revision'){
 
@@ -614,7 +614,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
         }
         // tx as a hash type
         // tx inside a block (addToTransactions)
-        let transacted = await addToTransactions(height, contractId, masterHash, linkId, totalTransacted, minerFees, timestamp * 1000)
+        let transacted = await addToTransactions(height, contractId, masterHash, linkId, totalTransacted, minerFees, timestamp)
         // tx info The field "synonyms" includes only the contractId to link this TX to the contract created
     }*/
 
