@@ -698,8 +698,26 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
         })
     }
     async function addToTransactions(height, hash, parent, type, total, fees, timestamp) { // add to transactions table
-        //console.log('attempting to add tx ' + hash + ' to database as a '+type+' transaction.' );
+        console.log('['+type.toUpperCase()+'] attempting to add tx ' + hash + ' to database as a '+type+' transaction.' );
         return new Promise((resolve) => {
+            knex('transactions')
+            .select('*')
+            .where('tx_hash', hash)
+            .then((success) => {
+                if (success.length != 0) {
+                    console.log('Updating ['+type.toUpperCase()+'] with hash of '+hash);
+                    knex('transactions')
+                    .where('tx_hash', hash)
+                    .update({
+                        tx_type: type
+                    })
+                    .then((results) => {
+                        resolve('Inserted')
+                    })
+                    .catch((err) => {
+                        console.log(err);
+                    })
+                } else { 
             knex('transactions').insert({
                 block_height: height,
                 tx_hash: hash,
@@ -715,7 +733,12 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 console.log(error);
                 resolve('fail');// console.log(error)
             })
+        }
         })
+        .catch((error) => { 
+            console.log(error);
+        })
+    })
     }
     async function addToAddress(address, amount, tx_hash, direction, type, height) {
         return new Promise((resolve) => {
@@ -735,7 +758,6 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
         })
     }
     async function calcTotals(address, direction, amount, height, tx_hash, tx_type) {
-        console.log('attempt to calc totals for address ', address);
         return new Promise((resolve) => {
             knex('address_totals')
                 .select('*')
