@@ -10,12 +10,16 @@ class LastTx extends Component {
                     <div className="card-body">
                         <h3 className="card-title">Latest Transactions</h3>
                         <table className="overflow-auto">
-                            <td>Type</td>
-                            <td>Height</td>
-                            <td>Datetime</td>
-                            <td>Amount</td>
-                            <td>Hash</td>
-
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Height</th>
+                                    <th>Datetime</th>
+                                    <th>Amount</th>
+                                    <th>Hash</th>
+                                </tr>
+                            </thead>
+                            <tbody>
                             {this.props.lasttx.lasttx.map((tx) => {
                                 let type = '';
                                 switch (tx.tx_type) {
@@ -46,6 +50,7 @@ class LastTx extends Component {
                                 )
                             }
                             )}
+                            </tbody>
                         </table>
                     </div>
                 </div>

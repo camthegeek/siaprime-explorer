@@ -11,10 +11,14 @@ class LastBlocks extends Component {
                 <div className="card-body">
                 <h3 className="card-title">Last 10 Blocks</h3>
                 <table className="overflow-auto">
-                <td>Maturity</td>
-                <td>Height</td>
-                <td>Datetime</td>
-                    
+                    <thead>
+                        <tr>
+                            <th>Maturity</th>
+                            <th>Height</th>
+                            <th>Datetime</th>
+                        </tr>
+                </thead>
+                <tbody>
                 {this.props.woot.lastblocks.map((block) => 
                 <tr>
                     <td>{(Number(`${this.props.woot.netdata.current_block}`)-(Number(`${block.height}`))) > 72 ? <Box color="green" size={24} /> : <Box color="red" size={24} /> } </td>
@@ -23,6 +27,7 @@ class LastBlocks extends Component {
                 </tr>
                 
                 )}
+                </tbody>
                 </table>
                 </div>
                 </div>
