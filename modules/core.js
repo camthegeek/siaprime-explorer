@@ -533,8 +533,14 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             }
             let contractId = transactions[t].filecontractids[0]
 
-            let allowancePostingHash = transactions[t].siacoininputoutputs[0].unlockhash
-            let collateralPostingHash = transactions[t].siacoininputoutputs[1].unlockhash
+            let allowancePostingHash;
+            let collateralPostingHash;
+            if (transactions[t].siacoininputoutputs[0]) { 
+                allowancePostingHash = transactions[t].siacoininputoutputs[0].unlockhash;
+            }
+            if (transactions[t].siacoininputoutputs[1]) {
+                collateralPostingHash = transactions[t].siacoininputoutputs[1].unlockhash;
+            }
 
             let renterAllowanceValue = parseInt(transactions[t].siacoininputoutputs[0].value)
             let renterAllowanceSender = transactions[t].siacoininputoutputs[0].unlockhash
