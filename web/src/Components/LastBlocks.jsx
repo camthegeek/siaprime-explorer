@@ -19,8 +19,8 @@ class LastBlocks extends Component {
                         </tr>
                 </thead>
                 <tbody>
-                {this.props.woot.lastblocks.map((block) => 
-                <tr>
+                {this.props.woot.lastblocks.map((block, i) => 
+                <tr key={i}>
                     <td>{(Number(`${this.props.woot.netdata.current_block}`)-(Number(`${block.height}`))) > 72 ? <Box color="green" size={24} /> : <Box color="red" size={24} /> } </td>
                     <td><Link to={`/block/${block.height}`} key={block.height}>{block.height}</Link></td>
                     <td>{new Intl.DateTimeFormat('en-US', {year: 'numeric', month: '2-digit',day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'}).format(`${block.timestamp}`*1000)} </td>

@@ -20,7 +20,7 @@ class LastTx extends Component {
                                 </tr>
                             </thead>
                             <tbody>
-                            {this.props.lasttx.lasttx.map((tx) => {
+                            {this.props.lasttx.lasttx.map((tx, i) => {
                                 let type = '';
                                 switch (tx.tx_type) {
                                     case 'sctx':
@@ -40,7 +40,7 @@ class LastTx extends Component {
                                     break;
                                 }
                                 return (
-                                    <tr>
+                                    <tr key={i}>
                                         <td>{type}</td>
                                         <td><Link to={`/block/${tx.block_height}`} key={tx.block_height}>{tx.block_height}</Link></td>
                                         <td>{new Intl.DateTimeFormat('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(`${tx.timestamp}`)} </td>
