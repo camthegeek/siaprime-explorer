@@ -7,7 +7,7 @@ class LastTx extends Component {
         return (
             <div className="col-xl-12 col-sm-12 col-12 mt-2 mb-2">
                 <div className="card">
-                    <div class="card-body">
+                    <div className="card-body">
                         <h3 className="card-title">Latest Transactions</h3>
                         <table className="overflow-auto">
                             <td>Type</td>

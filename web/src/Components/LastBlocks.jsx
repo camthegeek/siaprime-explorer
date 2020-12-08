@@ -8,7 +8,7 @@ class LastBlocks extends Component {
 
             <div className="col-xl-6 col-sm-6 col-12 mt-2 mb-2">
                 <div className="card">
-                <div class="card-body">
+                <div className="card-body">
                 <h3 className="card-title">Last 10 Blocks</h3>
                 <table className="overflow-auto">
                 <td>Maturity</td>

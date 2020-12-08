@@ -8,7 +8,7 @@ class Home extends Component {
         return(
             <section className="container">
                 <NetworkData data={this.props.morestates}/>
-                <div class="container-fluid">
+                <div className="container-fluid">
                     <div className="row">
                 <LastBlocks woot={this.props.morestates}/>
                 <LastTx lasttx={this.props.morestates}/>
