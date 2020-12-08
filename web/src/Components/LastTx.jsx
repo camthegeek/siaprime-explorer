@@ -30,6 +30,10 @@ class LastTx extends Component {
                                     case 'hostann':
                                         type = "Host Ann"
                                     break;
+
+                                    case 'sftx':
+                                        type = "SPF"
+                                    break;
                                 }
                                 return (
                                     <tr>
