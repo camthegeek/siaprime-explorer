@@ -522,6 +522,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
         if (txType == 'contract'){
             let masterHash = transactions[t].id;
             let txHeight = transactions[t].height;
+            let parent = transactions[t].parent;
             let revisionNum = parseInt(transactions[t].rawtransaction.filecontracts[0].revisionnumber);
             let windowStart = parseInt(transactions[t].rawtransaction.filecontracts[0].windowstart); // block that opens the window for submitting the storage proof
             let windowEnd = parseInt(transactions[t].rawtransaction.filecontracts[0].windowend);
@@ -532,124 +533,166 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 var renewBool = 1
             }
             let contractId = transactions[t].filecontractids[0]
-
-            var link = []
-            link[0] = transactions[t].rawtransaction.siacoininputs[0].parentid // renter tx
-            link[1] = transactions[t].rawtransaction.siacoininputs[1].parentid // host tx
             let allowancePostingHash;
             let collateralPostingHash;
+            let validProof1Value;
+            let validProof1Address;
+            let validProof2Value;
+            let validProof2Address;        
+            let missedProof1Value;
+            let missedProof1Address;
+            let missedProof2Value;
+            let missedProof2Address;
+            let missedProof3Value;
+            let missedProof3Address;
+            let totalTransacted;
 
-            for (q = 0; q < link.length; q++) { // for both links
-                let matchBool = false
-                for (m = 0; m < transactions.length; m++) { // iterate on each tx 
-                    if (transactions[m].siacoinoutputids != null) { // avoid errors as some txs dont have siacoin outputs
-                        if (link[q] == transactions[m].siacoinoutputids[0]) {
-                            matchBool = true // found matching tx
-                            let linkId = ""
-                            if (q == 0) {
-                                linkId = "allowance" // renter
-                            } else {
-                                linkId = "collateral" // host
-                            }
-                            // senders
-                            let inputoutputsjson = transactions[m].siacoininputoutputs;
-                            let siacoininputoutputs = Object.values(inputoutputsjson.reduce((cam, { unlockhash, value }) => {
-                                cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
-                                if (unlockhash == cam[unlockhash].unlockhash) {
-                                    cam[unlockhash].total += parseInt(value);
-                                }
-                                return cam;
-                            }, {}));
-                            for (z = 0; z < siacoininputoutputs.length; z++) {
-                                /* send each sender to addresses table with amount */
-                                let addr = siacoininputoutputs[z].unlockhash;
-                                let amt = siacoininputoutputs[z].total;
+
+            if (transactions[t].rawtransaction.siacoininputs.length >= 2) {
+                var link = []
+                link[0] = transactions[t].rawtransaction.siacoininputs[0].parentid // renter tx
+                link[1] = transactions[t].rawtransaction.siacoininputs[1].parentid // host tx
                 
-                                addToAddress(addr, '-' + amt, masterHash, 'out', linkId, txHeight)
-                                    .then((done) => {
-                                        // do something
-                                    })
-                                    .catch((errors) => {
-                                        console.log(errors);
-                                    });
-                                let contract_totals_out = await calcTotals(addr, 'out', amt, txHeight, masterHash, linkId);
-                            }
-                            // receivers
-                            let siacoinoutputsjson = transactions[m].rawtransaction.siacoinoutputs;
-                            let siacoinoutputs = Object.values(siacoinoutputsjson.reduce((cam, { unlockhash, value }) => {
-                                cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
-                                if (unlockhash == cam[unlockhash].unlockhash) {
-                                    cam[unlockhash].total += parseInt(value);
+                for (q = 0; q < link.length; q++) { // for both links
+                    let matchBool = false
+                    for (m = 0; m < transactions.length; m++) { // iterate on each tx 
+                        if (transactions[m].siacoinoutputids != null) { // avoid errors as some txs dont have siacoin outputs
+                            if (link[q] == transactions[m].siacoinoutputids[0]) {
+                                matchBool = true // found matching tx
+                                let linkId = ""
+                                if (q == 0) {
+                                    linkId = "allowance" // renter
+                                } else {
+                                    linkId = "collateral" // host
                                 }
-                                return cam;
-                            }, {}));
-                            for (r = 0; r < siacoinoutputs.length; r++) {
-                                let addr = siacoinoutputs[r].unlockhash;
-                                let amt = siacoinoutputs[r].total;
-                                if (r == 0) {
-                                    linkId = txType
+                                // senders
+                                let inputoutputsjson = transactions[m].siacoininputoutputs;
+                                let siacoininputoutputs = Object.values(inputoutputsjson.reduce((cam, { unlockhash, value }) => {
+                                    cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
+                                    if (unlockhash == cam[unlockhash].unlockhash) {
+                                        cam[unlockhash].total += parseInt(value);
+                                    }
+                                    return cam;
+                                }, {}));
+                                for (z = 0; z < siacoininputoutputs.length; z++) {
+                                    /* send each sender to addresses table with amount */
+                                    let addr = siacoininputoutputs[z].unlockhash;
+                                    let amt = siacoininputoutputs[z].total;
+                    
+                                    addToAddress(addr, '-' + amt, masterHash, 'out', linkId, txHeight)
+                                        .then((done) => {
+                                            // do something
+                                        })
+                                        .catch((errors) => {
+                                            console.log(errors);
+                                        });
+                                    let contract_totals_out = await calcTotals(addr, 'out', amt, txHeight, masterHash, linkId);
                                 }
+                                // receivers
+                                let siacoinoutputsjson = transactions[m].rawtransaction.siacoinoutputs;
+                                let siacoinoutputs = Object.values(siacoinoutputsjson.reduce((cam, { unlockhash, value }) => {
+                                    cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
+                                    if (unlockhash == cam[unlockhash].unlockhash) {
+                                        cam[unlockhash].total += parseInt(value);
+                                    }
+                                    return cam;
+                                }, {}));
+                                for (r = 0; r < siacoinoutputs.length; r++) {
+                                    let addr = siacoinoutputs[r].unlockhash;
+                                    let amt = siacoinoutputs[r].total;
+                                    if (r == 0) {
+                                        linkId = txType
+                                    }
 
-                                addToAddress(addr, amt, masterHash, 'in', linkId, txHeight)
-                                    .then((done) => {
+                                    addToAddress(addr, amt, masterHash, 'in', linkId, txHeight)
+                                        .then((done) => {
 
-                                    })
-                                    .catch((errors) => {
-                                        console.log(errors);
-                                    });
-                                let contract_totals_in = await calcTotals(addr, 'in', amt, txHeight, masterHash, linkId);
+                                        })
+                                        .catch((errors) => {
+                                            console.log(errors);
+                                        });
+                                    let contract_totals_in = await calcTotals(addr, 'in', amt, txHeight, masterHash, linkId);
+                                }
                             }
                         }
                     }
-                }
-                if (matchBool == false) {
-                    if (transactions[t].siacoininputoutputs[0]) { 
-                        allowancePostingHash = transactions[t].siacoininputoutputs[0].unlockhash;
+                    if (matchBool == false) {
+                        if (transactions[t].siacoininputoutputs[0]) { 
+                            allowancePostingHash = transactions[t].siacoininputoutputs[0].unlockhash;
+                        }
+                        if (transactions[t].siacoininputoutputs[1]) {
+                            collateralPostingHash = transactions[t].siacoininputoutputs[1].unlockhash;
+                        }
+
                     }
-                    if (transactions[t].siacoininputoutputs[1]) {
-                        collateralPostingHash = transactions[t].siacoininputoutputs[1].unlockhash;
+                }
+
+                renterAllowanceValue = parseInt(transactions[t].siacoininputoutputs[0].value)
+                renterAllowanceSender = transactions[t].siacoininputoutputs[0].unlockhash
+
+                hostCollateralValue = parseInt(transactions[t].siacoininputoutputs[1].value)
+                hostCollateralSender = transactions[t].siacoininputoutputs[1].unlockhash
+                totalTransacted = renterAllowanceValue + hostCollateralValue
+
+                // storage proof results
+                validProof1Value = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[0].value
+                validProof1Address = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[0].unlockhash
+
+                validProof2Value = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[1].value
+                validProof2Address = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[1].unlockhash
+                
+                missedProof1Value = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[0].value
+                missedProof1Address = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[0].unlockhash
+
+                missedProof2Value = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[1].value
+                missedProof2Address = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[1].unlockhash
+
+                missedProof3Value = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[2].value
+                missedProof3Address = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[2].unlockhash
+
+                // address_history changes
+                addToAddress(renterAllowanceSender, '-' + renterAllowanceValue, masterHash, 'out', txType, txHeight)
+                addToAddress(hostCollateralSender, '-' + hostCollateralValue, masterHash, 'out', txType, txHeight)
+
+                // Exception: some modern contracts have a renter-returning output. `us` contracts can do this
+                if (transactions[t].siacoinoutputs != null) {
+                    for (var i = 0; i < transactions[t].siacoinoutputs.length; i++) {
+                        addToAddress(transactions[t].siacoinoutputs[i].unlockhash, transactions[t].siacoinoutputs[i].value, masterHash, 'out', txType, txHeight)
                     }
-
                 }
-            }
+            } else if (transactions[t].rawtransaction.siacoininputs.length == 1) {
+                allowancePostingHash = transactions[t].siacoininputoutputs[0].unlockhash
+                collateralPostingHash = "unknown"
+                renterAllowanceSender = transactions[t].siacoininputoutputs[0].unlockhash
+                renterAllowanceValue = parseInt(transactions[t].siacoininputoutputs[0].value)
+                hostCollateralValue = 0
+                hostCollateralSender = "unknown"
+                totalTransacted = renterAllowanceValue
+                let linkId = "allowance"
 
-            let renterAllowanceValue = parseInt(transactions[t].siacoininputoutputs[0].value)
-            let renterAllowanceSender = transactions[t].siacoininputoutputs[0].unlockhash
+                // storageproof outputs
+                validProof1Value = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[0].value
+                validProof1Address = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[0].unlockhash
 
-            let hostCollateralValue = parseInt(transactions[t].siacoininputoutputs[1].value)
-            let hostCollateralSender = transactions[t].siacoininputoutputs[1].unlockhash
-            //let totalTransacted = renterAllowanceValue + hostCollateralValue
+                validProof2Value = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[1].value
+                validProof2Address = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[1].unlockhash
+                
+                missedProof1Value = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[0].value
+                missedProof1Address = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[0].unlockhash
 
-            // storage proof results
-            let validProof1Value = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[0].value
-            let validProof1Address = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[0].unlockhash
+                missedProof2Value = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[1].value
+                missedProof2Address = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[1].unlockhash
 
-            let validProof2Value = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[1].value
-            let validProof2Address = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[1].unlockhash
-            
-            let missedProof1Value = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[0].value
-            let missedProof1Address = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[0].unlockhash
+                missedProof3Value = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[2].value
+                missedProof3Address = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[2].unlockhash
 
-            let missedProof2Value = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[1].value
-            let missedProof2Address = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[1].unlockhash
-
-            let missedProof3Value = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[2].value
-            let missedProof3Address = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[2].unlockhash
-
-            // address_history changes
-            addToAddress(renterAllowanceSender, '-' + renterAllowanceValue, masterHash, 'out', txType, txHeight)
-            addToAddress(hostCollateralSender, '-' + hostCollateralValue, masterHash, 'out', txType, txHeight)
-
-            // Exception: some modern contracts have a renter-returning output. `us` contracts can do this
-            if (transactions[t].siacoinoutputs != null) {
-                for (var i = 0; i < transactions[t].siacoinoutputs.length; i++) {
-                    addToAddress(transactions[t].siacoinoutputs[i].unlockhash, transactions[t].siacoinoutputs[i].value, masterHash, 'out', txType, txHeight)
-                }
+                // address_history changes
+                addToAddress(renterAllowanceSender, '-' + renterAllowanceValue, masterHash, 'out', linkId, txHeight)
             }
             // TxID and contractID as a hash type (both can be searched as synonyms)
 
             // Tx inside a block (addToTransactions)
-            //addToTransactions(txHeight, contractId, masterHash, txType, totalTransacted, minerFees, timestamp);
+            addToTransactions(txHeight, masterHash, parent, txType, totalTransacted, minerFees, timestamp);
 
             // Contract info insert
             addToContracts(masterHash, contractId, allowancePostingHash, renterAllowanceValue, collateralPostingHash, hostCollateralValue,
