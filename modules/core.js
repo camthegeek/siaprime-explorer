@@ -533,13 +533,84 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             }
             let contractId = transactions[t].filecontractids[0]
 
+            var link = []
+            link[0] = transactions[t].rawtransaction.siacoininputs[0].parentid // renter tx
+            link[1] = transactions[t].rawtransaction.siacoininputs[1].parentid // host tx
             let allowancePostingHash;
             let collateralPostingHash;
-            if (transactions[t].siacoininputoutputs[0]) { 
-                allowancePostingHash = transactions[t].siacoininputoutputs[0].unlockhash;
-            }
-            if (transactions[t].siacoininputoutputs[1]) {
-                collateralPostingHash = transactions[t].siacoininputoutputs[1].unlockhash;
+
+            for (q = 0; q < link.length; q++) { // for both links
+                let matchBool = false
+                for (m = 0; m < transactions.length; m++) { // iterate on each tx 
+                    if (transactions[m].siacoinoutputids != null) { // avoid errors as some txs dont have siacoin outputs
+                        if (link[q] == transactions[m].siacoinoutputids[0]) {
+                            matchBool = true // found matching tx
+                            let linkId = ""
+                            if (q == 0) {
+                                linkId = "allowance" // renter
+                            } else {
+                                linkId = "collateral" // host
+                            }
+                            // senders
+                            let inputoutputsjson = transactions[m].siacoininputoutputs;
+                            let siacoininputoutputs = Object.values(inputoutputsjson.reduce((cam, { unlockhash, value }) => {
+                                cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
+                                if (unlockhash == cam[unlockhash].unlockhash) {
+                                    cam[unlockhash].total += parseInt(value);
+                                }
+                                return cam;
+                            }, {}));
+                            for (z = 0; z < siacoininputoutputs.length; z++) {
+                                /* send each sender to addresses table with amount */
+                                let addr = siacoininputoutputs[z].unlockhash;
+                                let amt = siacoininputoutputs[z].total;
+                
+                                addToAddress(addr, '-' + amt, masterHash, 'out', linkId, txHeight)
+                                    .then((done) => {
+                                        // do something
+                                    })
+                                    .catch((errors) => {
+                                        console.log(errors);
+                                    });
+                                let contract_totals_out = await calcTotals(addr, 'out', amt, txHeight, masterHash, linkId);
+                            }
+                            // receivers
+                            let siacoinoutputsjson = transactions[m].rawtransaction.siacoinoutputs;
+                            let siacoinoutputs = Object.values(siacoinoutputsjson.reduce((cam, { unlockhash, value }) => {
+                                cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
+                                if (unlockhash == cam[unlockhash].unlockhash) {
+                                    cam[unlockhash].total += parseInt(value);
+                                }
+                                return cam;
+                            }, {}));
+                            for (r = 0; r < siacoinoutputs.length; r++) {
+                                let addr = siacoinoutputs[r].unlockhash;
+                                let amt = siacoinoutputs[r].total;
+                                if (r == 0) {
+                                    linkId = txType
+                                }
+
+                                addToAddress(addr, amt, masterHash, 'in', linkId, txHeight)
+                                    .then((done) => {
+
+                                    })
+                                    .catch((errors) => {
+                                        console.log(errors);
+                                    });
+                                let contract_totals_in = await calcTotals(addr, 'in', amt, txHeight, masterHash, linkId);
+                            }
+                        }
+                    }
+                }
+                if (matchBool == false) {
+                    if (transactions[t].siacoininputoutputs[0]) { 
+                        allowancePostingHash = transactions[t].siacoininputoutputs[0].unlockhash;
+                    }
+                    if (transactions[t].siacoininputoutputs[1]) {
+                        collateralPostingHash = transactions[t].siacoininputoutputs[1].unlockhash;
+                    }
+
+                }
             }
 
             let renterAllowanceValue = parseInt(transactions[t].siacoininputoutputs[0].value)
@@ -595,34 +666,6 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
 
         }
     }
-    /*async function contractPreTx(tx, height, timestamp, linkId, contractId){
-        let totalTransacted = 0
-        let masterHash = tx.id
-
-        // Senders
-        for (j = 0; j < tx.siacoininputoutputs.length; j++){
-            let senderHash = tx.siacoininputoutputs[j].unlockhash
-            let senderAmount = parseInt(tx.siacoininputoutputs[j].value)
-            addToAddress(senderHash, '-' + senderAmount, masterHash, 'out', linkId, height);
-
-        }
-
-        // Receivers
-        for (k = 0; k < tx.rawtransaction.siacoinoutputs.length; k++){
-            let receiverHash = tx.rawtransaction.siacoinoutputs[k].unlockhash
-            let receiverAmount = parseInt(tx.rawtransaction.siacoinoutputs[k].value)
-            if (k == 0) {// Marks this output as money for the contract formation: ads a different "color" to the address change operation
-                addToAddress(receiverHash, receiverAmount, masterHash, 'in', 'contractform', height)
-            } else {
-                addToAddress(receiverHash, receiverAmount, masterHash, 'in', linkId, height)
-            }
-            totalTransacted = totalTransacted + receiverAmount
-        }
-        // tx as a hash type
-        // tx inside a block (addToTransactions)
-        let transacted = await addToTransactions(height, contractId, masterHash, linkId, totalTransacted, minerFees, timestamp)
-        // tx info The field "synonyms" includes only the contractId to link this TX to the contract created
-    }*/
 
     async function addToContracts(masterHash, contractId, allowancePosting, renterValue, collateralPosting, hostValue,
         fees, windowStart, windowEnd, revisionNum, originalFileSize, currentFileSize, 
@@ -736,6 +779,9 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                         switch(tx_type) {
                             case 'sctx':
                                 case 'coinbase':
+                                case 'contract':
+                                case 'collateral':
+                                case 'allowance':
                                 if (direction == 'in') {
                                     knex('address_totals')
                                         .insert({
@@ -810,6 +856,9 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                         switch (tx_type) {
                             case 'sctx':
                                 case 'coinbase':
+                                case 'contract':
+                                case 'collateral':
+                                case 'allowance':
                                 console.log('[SCP] Address ' + address + ' already exists, updating.')
                                 let currentamountscp = Number(success[0].totalscp);
                                 let convertedscp = amount;
@@ -841,7 +890,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                                             console.log(error);
                                         })
                                 }
-                             break;
+                            break;
 
                             case 'sftx':
                                 console.log('[SPF] Address ' + address + ' already exists, updating.')
@@ -874,17 +923,13 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                                             console.log(error);
                                         })
                                 }
-
                                 break;
                         }
-
-
                     }
                 })
                 .catch((error) => {
                     console.log(error)
                 })
-
         })
     }
 }
