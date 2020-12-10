@@ -700,7 +700,134 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 missedProof1Address, missedProof1Value, missedProof2Address, missedProof2Value, missedProof3Address, missedProof3Value, txHeight, timestamp, 'ongoing', renewBool)
         }
         if (txType == 'revision'){
+            let hashSyn;
+            let totalTransacted;
+            let txHeight = transactions[t].height;
+            let parent = transactions[t].parent;
+            let masterHash = transactions[t].id
+            let contradId = transactions[t].rawtransaction.filecontractrevisions[0].parentid
+            let newRevision = parseInt(transactions[t].rawtransaction.filecontractrevisions[0].newrevisionnumber)
+            let newFileSize = parseInt(transactions[t].rawtransaction.filecontractrevisions[0].newfilesize)
+            let validProof1Value;
+            let validProof1Address;
+            let validProof2Value;
+            let validProof2Address;        
+            let missedProof1Value;
+            let missedProof1Address;
+            let missedProof2Value;
+            let missedProof2Address;
+            let missedProof3Value;
+            let missedProof3Address;
 
+            // storageproof outputs
+            if (transactions[t].rawtransaction.filecontractrevisions[0].newmissedproofoutputs.length > 2 || newRevision >= 18446744073709551616) {
+                if (newRevision >= 18446744073709551616) {
+                    // If the revision number is Max Uint64, this is a "Renew and Clear" Revision style. This is a new format intriduced on 2020,
+                    // and they don't include a MissedOutpu3 (burnt coins), as this contract is agreed between host and renter to be succeded, and
+                    // will not even have an in-chain storage proof
+                    validProof1Value = transactions[t].rawtransaction.filecontractrevisions[0].newvalidproofoutputs[0].value
+                    validProof1Address = transactions[t].rawtransaction.filecontractrevisions[0].newvalidproofoutputs[0].unlockhash
+                    validProof2Value = transactions[t].rawtransaction.filecontractrevisions[0].newvalidproofoutputs[1].value
+                    validProof2Address = transactions[t].rawtransaction.filecontractrevisions[0].newvalidproofoutputs[1].unlockhash
+                    missedProof1Value = transactions[t].rawtransaction.filecontractrevisions[0].newmissedproofoutputs[0].value
+                    missedProof1Address = transactions[t].rawtransaction.filecontractrevisions[0].newmissedproofoutputs[0].unlockhash
+                    missedProof2Value = transactions[t].rawtransaction.filecontractrevisions[0].missedproofoutputs[1].value
+                    missedProof2Address = transactions[t].rawtransaction.filecontractrevisions[0].missedproofoutputs[1].unlockhash
+                    missedProof3Value = 0
+                    missedProof3Address = "(renew and clear revision)"
+                } else {
+                    validProof1Value = transactions[t].rawtransaction.filecontractrevisions[0].newvalidproofoutputs[0].value
+                    validProof1Address = transactions[t].rawtransaction.filecontractrevisions[0].newvalidproofoutputs[0].unlockhash
+                    validProof2Value = transactions[t].rawtransaction.filecontractrevisions[0].newvalidproofoutputs[1].value
+                    validProof2Address = transactions[t].rawtransaction.filecontractrevisions[0].newvalidproofoutputs[1].unlockhash
+                    missedProof1Value = transactions[t].rawtransaction.filecontractrevisions[0].newmissedproofoutputs[0].value
+                    missedProof1Address = transactions[t].rawtransaction.filecontractrevisions[0].newmissedproofoutputs[0].unlockhash
+                    missedProof2Value = transactions[t].rawtransaction.filecontractrevisions[0].missedproofoutputs[1].value
+                    missedProof2Address = transactions[t].rawtransaction.filecontractrevisions[0].missedproofoutputs[1].unlockhash
+                    missedProof3Value = transactions[t].rawtransaction.filecontractrevisions[0].newmissedproofoutputs[2].value
+                    missedProof3Address = transactions[t].rawtransaction.filecontractrevisions[0].newmissedproofoutputs[2].unlockhash
+                }
+
+                // finding linked tx (the sending tx)
+                let matchBool = false
+                if (transactions[t].rawtransaction.siacoininputs.length != 0) {
+                    let match = transactions[t].siacoininputs[0].parentid
+                    let addr = []
+                    let amt = []
+                    for (m =0; m < transactions.length; m++){
+                        if (transactions[m].siacoinoutputids != null){
+                            if (match == transactions[m].siacoinoutputids[0]) {
+                                matchBool = true
+                                hashSyn = transactions[m].id
+
+                                let inputoutputsjson = transactions[m].siacoininputoutputs;
+                                let siacoininputoutputs = Object.values(inputoutputsjson.reduce((cam, { unlockhash, value }) => {
+                                    cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
+                                    if (unlockhash == cam[unlockhash].unlockhash) {
+                                        cam[unlockhash].total += parseInt(value);
+                                    }
+                                    return cam;
+                                }, {}));
+                                for (z = 0; z < siacoininputoutputs.length; z++) {
+                                    /* send each sender to addresses table with amount */
+                                    addr = siacoininputoutputs[z].unlockhash;
+                                    amt = siacoininputoutputs[z].total;
+                                    totalTransacted = totalTransacted + amt
+                    
+                                    addToAddress(addr, '-' + amt, masterHash, 'out', txType, txHeight)
+                                        .then((done) => {
+                                            // do something
+                                        })
+                                        .catch((errors) => {
+                                            console.log(errors);
+                                        });
+                                    let revision_totals_out = await calcTotals(addr, 'out', amt, txHeight, masterHash, txType);
+                                }
+                            }
+                        }
+                    }
+                }
+                if (matchBool == false) {
+                    hashSyn = ""
+                    if (transactions[t].rawtransaction.siacoininputs.length != 0) {
+                        let inputoutputsjson = transactions[m].siacoininputoutputs;
+                        let siacoininputoutputs = Object.values(inputoutputsjson.reduce((cam, { unlockhash, value }) => {
+                            cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
+                            if (unlockhash == cam[unlockhash].unlockhash) {
+                                cam[unlockhash].total += parseInt(value);
+                            }
+                            return cam;
+                        }, {}));
+                        for (z = 0; z < siacoininputoutputs.length; z++) {
+                            /* send each sender to addresses table with amount */
+                            addr = siacoininputoutputs[z].unlockhash;
+                            amt = siacoininputoutputs[z].total;
+                            totalTransacted = totalTransacted + amt
+            
+                            addToAddress(addr, '-' + amt, masterHash, 'out', txType, txHeight)
+                                .then((done) => {
+                                    // do something
+                                })
+                                .catch((errors) => {
+                                    console.log(errors);
+                                });
+                            let revision_totals_out = await calcTotals(addr, 'out', amt, txHeight, masterHash, txType);
+                        }
+                    }
+                }
+            }
+
+            // tx and synonym as hashtypes
+            // tx inside a block
+            addToTransactions(txHeight, masterHash, parent, txType, totalTransacted, minerFees, timestamp)
+            // revision info. The field "synonyms" includes only the contractId to link this TX to the contract created
+            addToRevisions(masterHash, contradId, minerFees, newRevision, newFileSize, validProof1Address, validProof1Value,
+                validProof2Address, validProof2Value, missedProof1Address, missedProof1Value, missedProof2Address, 
+                missedProof2Value, missedProof3Address, missedProof3Value, txHeight, timestamp, hashSyn)
+            // updating contracts with new data
+            updateContracts(newRevision, newFileSize, validProof1Address, validProof1Value, validProof2Address, 
+                validProof2Value, missedProof1Address, missedProof1Value, missedProof2Address, 
+                missedProof2Value, missedProof3Address, missedProof3Value, contradId, txType)
         }
         if (txType == 'storageproof'){
 
@@ -709,7 +836,37 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
 
         }
     }
-
+    async function addToRevisions(masterHash, contractId, fees, newRevision, newFileSize, validProof1Address, validProof1Value,
+        validProof2Address, validProof2Value, missedProof1Address, missedProof1Value, missedProof2Address, missedProof2Value, 
+        missedProof3Address, missedProof3Value, height, timestamp, hashSyn) {
+            return new Promise((resolve) => {
+                knex('revisions').insert({
+                    master_hash: masterHash,
+                    contract_id: contractId,
+                    fees: fees,
+                    new_revision_num: newRevision,
+                    new_filesize: newFileSize,
+                    valid_proof1_address: validProof1Address,
+                    valid_proof1_value: validProof1Value,
+                    valid_proof2_address: validProof2Address,
+                    valid_proof2_value: validProof2Value,
+                    missed_proof1_address: missedProof1Address,
+                    missed_proof1_value: missedProof1Value,
+                    missed_proof2_address: missedProof2Address,
+                    missed_proof2_value: missedProof2Value, 
+                    missed_proof3_address: missedProof3Address, 
+                    missed_proof3_value: missedProof3Value, 
+                    height: height,
+                    timestamp: timestamp,
+                    hash_syn: hashSyn
+                }).then((results) => {
+                    resolve('Inserted');
+                }).catch((error) => {
+                    console.log(error);
+                    resolve('Fail');
+                })
+            })
+        }
     async function addToContracts(masterHash, contractId, allowancePosting, renterValue, collateralPosting, hostValue,
         fees, windowStart, windowEnd, revisionNum, originalFileSize, currentFileSize, 
         validProof1Address, validProof1Value, validProof2Address, validProof2Value,
@@ -750,6 +907,48 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 resolve('fail');
             })
         })
+    }
+    async function updateContracts(revisionNum, currentFileSize, validProof1Address, validProof1Value,
+        validProof2Address, validProof2Value, missedProof1Address, missedProof1Value, missedProof2Address, 
+        missedProof2Value, missedProof3Address, missedProof3Value, contractId, tx_type) {
+            return new Promise((resolve) => {
+                knex('contracts')
+                .select('*')
+                .where('contract_id', contractId)
+                .then((success) => {
+                    if (success.length === 0){
+
+                    } else {
+                        switch (tx_type) {
+                            case 'revision':
+                            console.log('Contract revision - Updating contract ' + contractId);
+                            knex('contracts')
+                            .where('contract_id', contractId)
+                            .update({
+                                revision_num: revisionNum,
+                                current_filesize: currentFileSize, 
+                                valid_proof1_address: validProof1Address,
+                                valid_proof1_value: validProof1Value, 
+                                valid_proof2_address: validProof2Address,
+                                valid_proof2_value: validProof2Value, 
+                                missed_proof1_address: missedProof1Address, 
+                                missed_proof1_value: missedProof1Value, 
+                                missed_proof2_address: missedProof2Address, 
+                                missed_proof2_value: missedProof2Value, 
+                                missed_proof3_address: missedProof3Address,
+                                missed_proof3_value: missedProof3Value
+                            }).then((results) => {
+                                resolve('Updated')
+                            }).catch((err) => {
+                                console.log(err);
+                            })
+                        }
+
+                    }
+                })
+            }).catch((error) => {
+                console.log(error);
+            })
     }
     async function addToTransactions(height, hash, parent, type, total, fees, timestamp) { // add to transactions table
         console.log('['+type.toUpperCase()+'] attempting to add tx ' + hash + ' to database as a '+type+' transaction.' );
@@ -902,6 +1101,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                                 case 'contract':
                                 case 'collateral':
                                 case 'allowance':
+                                case 'revision':
                                 console.log('[SCP] Address ' + address + ' already exists, updating.')
                                 let currentamountscp = Number(success[0].totalscp);
                                 let convertedscp = amount;
