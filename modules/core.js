@@ -383,10 +383,6 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 let totals3 = await calcTotals(addr, 'in', amt, txHeight, txhash, txType);
             }
         } 
-        if (transactions[t].rawtransaction.arbitrarydata.length > 0) {
-            console.log(transactions[t].id +' identified as a hostAnn');
-                txType = 'hostAnn';
-        } 
         if (transactions[t].rawtransaction.siacoininputs) {
             if (transactions[t].rawtransaction.siacoininputs.length != 0
                     && transactions[t].rawtransaction.filecontracts.length == 0
@@ -428,6 +424,11 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 but this block pretty much checks the json data for each address and sums up the total per address in the transaction.
                 we don't need EVERY SINGLE CHANGE stored in sql. Just the change per tx
             */
+            // determining if tx is a host ann
+            let hostAnnBool = false
+            let decodedIp;
+            let arbData = transactions[t].rawtransaction.arbitrarydata
+            let hashSyn = []         
             let inputoutputsjson = transactions[t].siacoininputoutputs;
             let siacoininputoutputs = Object.values(inputoutputsjson.reduce((cam, { unlockhash, value }) => {
                 cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
@@ -452,7 +453,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                     });
                 let totals2 = await calcTotals(addr, 'out', amt, txHeight, txhash, txType);
             }
-
+            hashSyn.push(transactions[t].id)
             /*  we COULD technically use a function to do this so we're not copy/pasting code 3 times
                 but this block pretty much checks the json data for each address and sums up the total per address in the transaction.
                 we don't need EVERY SINGLE CHANGE stored in sql. Just the change per tx
@@ -480,8 +481,26 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                     });
                 let totals1 = await calcTotals(addr, 'in', amt, txHeight, txhash, txType);
             }
+            if (arbData.length > 0){
+                slice = arbData[0].slice(0,14)
+                if (slice == "SG9zdEFubm91bm") {
+                    hostAnnBool = true
+                    txType = 'hostann'
 
-            let transacted = await addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp);
+                    hostIp = arbData[0].slice(32)
+                    let s = hostIp.search("AAAAAAAAAA")
+                    hostIp = hostIp.slice(0, (s-9))
+                    decodedIp = Buffer.from(hostIp, 'base64').toString('ascii')
+                }
+            }
+            if (hostAnnBool == true) {
+                // host_info
+                addToHost(masterHash, hashSyn, txHeight, timestamp, minerFees, decodedIp)
+                // transactions
+                let transacted = await addToTransactions(txHeight, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees, timestamp)
+            } else {
+            let transacted = await addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees, timestamp);
+            }
         }
         if (txType == 'sftx') {
             console.log('processing sf stuff on ',transactions[t].id);
@@ -517,7 +536,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 let totalspf_in = await calcTotals(addr_spf, 'in', amt_spf, txHeight_spf, txhash_spf, txType);
             }
 
-            let transacted = await addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees / scprimecoinprecision, timestamp);
+            let transacted = await addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees, timestamp);
         }
         if (txType == 'contract'){
             let masterHash = transactions[t].id;
@@ -891,9 +910,23 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             addToStorageproofs(masterHash, contractId, hashSyn, txHeight, timestamp, minerFees)
 
         }
-        if (txType == 'hostAnn'){
-
-        }
+    }
+    async function addToHost(masterHash, hashSyn, txHeight, timestamp, minerFees, decodedIp) {
+        return new Promise((resolve) => {
+            knex('host_info').insert({
+                tx_hash: masterHash,
+                hash_syn: hashSyn,
+                height: txHeight,
+                timestamp: timestamp,
+                fees: minerFees,
+                ip: decodedIp
+            }).then((results) => {
+                resolve('Inserted');
+            }).catch((error) => {
+                console.log(error);
+                resolve('Fail');
+            })
+        })
     }
     async function addToStorageproofs(masterHash, contractId, hashSyn, txHeight, timestamp, minerFees) {
         return new Promise((resolve) => {
