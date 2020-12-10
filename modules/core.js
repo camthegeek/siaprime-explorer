@@ -830,11 +830,87 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 missedProof2Value, missedProof3Address, missedProof3Value, contradId, txType)
         }
         if (txType == 'storageproof'){
+            let totalTransacted = 0
+            let masterHash = transactions[t].id
+            let contractId = transactions[t].rawtransaction.storageproofs[0].parentid
+            let hashSyn = masterHash
+            let txHeight = transactions[t].height
+
+            // finding linked tx (the sending tx)
+            if (transactions[t].rawtransaction.siacoininputs.length > 0) {
+                let match = transactions[t].rawtransaction.siacoininputs[0].parentid
+                for (m = 0; m < transactions.length; m++) {
+                    if (transactions[m].siacoinoutputids != null) {
+                        if (match == transactions[m].siacoinoutputids[0]) {
+                            eTx = transactions[m]
+                            let extraHash = eTx.id
+                            hashSyn = hashSyn + ', ' + extraHash
+
+                            // senders
+                            let inputoutputsjson = transactions[m].siacoininputoutputs;
+                            let siacoininputoutputs = Object.values(inputoutputsjson.reduce((cam, { unlockhash, value }) => {
+                                cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
+                                if (unlockhash == cam[unlockhash].unlockhash) {
+                                    cam[unlockhash].total += parseInt(value);
+                                }
+                                return cam;
+                            }, {}));
+                            for (z = 0; z < siacoininputoutputs.length; z++) {
+                                /* send each sender to addresses table with amount */
+                                let addr = siacoininputoutputs[z].unlockhash;
+                                let amt = siacoininputoutputs[z].total;
+                
+                                addToAddress(addr, '-' + amt, masterHash, 'out', txType, txHeight)
+                                    .then((done) => {
+                                        // do something
+                                    })
+                                    .catch((errors) => {
+                                        console.log(errors);
+                                    });
+                                let storageproof_totals_out = await calcTotals(addr, 'out', amt, txHeight, masterHash, txType);
+                            }
+
+                            // receiver: only 2nd output (wallet return), as first are miner Fees
+                            let addr = eTx.rawtransaction.siacoinoutputs[1].unlockhash
+                            let amt = parseInt(eTx.rawtransaction.siacoinoutputs[1].value)
+                            totalTransacted = minerFees + amt
+                            addToAddress(addr, amt, masterHash, 'in', txType, txHeight)
+                                .then((done) => {
+                                }).catch((errors) => {
+                                    console.log(errors);
+                                });
+                            let storageproof_totals_in = await calcTotals(addr, 'in', amt, txHeight, masterHash, txType)
+                        }
+                    }
+                }
+            }
+            // masterhash as hashtype
+            // tx inside a block
+            addToTransactions(txHeight, masterHash, parent, txType, totalTransacted, minerFees, timestamp)
+            // storageproofs
+            addToStorageproofs(masterHash, contractId, hashSyn, txHeight, timestamp, minerFees)
 
         }
         if (txType == 'hostAnn'){
 
         }
+    }
+    async function addToStorageproofs(masterHash, contractId, hashSyn, txHeight, timestamp, minerFees) {
+        return new Promise((resolve) => {
+            knex('storageproofs').insert({
+                master_hash: masterHash,
+                contract_id: contractId, 
+                hash_syn: hashSyn, 
+                height: txHeight,
+                timestamp: timestamp,
+                fees: minerFees
+            }).then((results) => {
+                resolve('Inserted');
+            }).catch((error) => {
+                console.log(error);
+                resolve('Fail');
+            })
+        })
     }
     async function addToRevisions(masterHash, contractId, fees, newRevision, newFileSize, validProof1Address, validProof1Value,
         validProof2Address, validProof2Value, missedProof1Address, missedProof1Value, missedProof2Address, missedProof2Value, 
@@ -1024,6 +1100,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                                 case 'contract':
                                 case 'collateral':
                                 case 'allowance':
+                                case 'storageproof':
                                 if (direction == 'in') {
                                     knex('address_totals')
                                         .insert({
@@ -1102,6 +1179,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                                 case 'collateral':
                                 case 'allowance':
                                 case 'revision':
+                                case 'storageproof':
                                 console.log('[SCP] Address ' + address + ' already exists, updating.')
                                 let currentamountscp = Number(success[0].totalscp);
                                 let convertedscp = amount;
