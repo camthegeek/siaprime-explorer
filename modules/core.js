@@ -495,9 +495,9 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             }
             if (hostAnnBool == true) {
                 // host_info
-                addToHost(masterHash, hashSyn, txHeight, timestamp, minerFees, decodedIp)
+                addToHost(transactions[t].id, hashSyn, transactions[t].height, timestamp, minerFees, decodedIp)
                 // transactions
-                let transacted = await addToTransactions(txHeight, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees, timestamp)
+                let transacted = await addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees, timestamp)
             } else {
             let transacted = await addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees, timestamp);
             }
