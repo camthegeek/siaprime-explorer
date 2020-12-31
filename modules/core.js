@@ -334,9 +334,9 @@ async function parseWholeBlock(blockInfo, height) {
 
 async function processTransaction(transactions, timestamp, minerpayouts) { // appropriately named function.
     let minerFees = 0; // set minerFees to zero
-    let txType = ''; // allows us to use the txType variable anywhere in this function
 
     for (t = 0; t < transactions.length; t++) { // for each transaction. . .
+        let txType = ''; // allows us to use the txType variable anywhere in this function
         console.log('[TX] Processing transactions on height:', transactions[t].height)
         let txTotal = 0; // set the tx total sent to 0;
         if (transactions[t].rawtransaction.minerfees != undefined) { // if the tx has miner fees..
