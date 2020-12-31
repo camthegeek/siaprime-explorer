@@ -43,7 +43,7 @@ class LastTx extends Component {
                                     <tr key={i}>
                                         <td>{type}</td>
                                         <td><Link to={`/block/${tx.block_height}`} key={tx.block_height}>{tx.block_height}</Link></td>
-                                        <td>{new Intl.DateTimeFormat('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(`${tx.timestamp}`)} </td>
+                                        <td>{new Intl.DateTimeFormat('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(`${tx.timestamp*1000}`)} </td>
                                         <td>{tx.tx_total}</td>
                                         <td><Link to={`/block/${tx.tx_hash}`} key={tx.tx_hash}>{tx.tx_hash}</Link></td>
                                     </tr>
