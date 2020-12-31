@@ -38,6 +38,18 @@ class LastTx extends Component {
                                     case 'sftx':
                                         type = "SPF"
                                     break;
+
+                                    case 'contract':
+                                        type = "Contract"
+                                    break;
+
+                                    case 'revision':
+                                        type = "Revision"
+                                    break;
+
+                                    case 'storageproof':
+                                        type = "Storage Proof"
+                                    break;
                                 }
                                 return (
                                     <tr key={i}>
