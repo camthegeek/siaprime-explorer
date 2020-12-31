@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom';
 //import { Check, Box } from 'react-bootstrap-icons';
 
 class LastTx extends Component {
+    truncate(str) {
+        return str.length > 32 ? str.substring(0, 31) + "..." : str;
+    }
     render() {
         return (
             <div className="col-xl-12 col-sm-12 col-12 mt-2 mb-2">
@@ -57,7 +60,7 @@ class LastTx extends Component {
                                         <td><Link to={`/block/${tx.block_height}`} key={tx.block_height}>{tx.block_height}</Link></td>
                                         <td>{new Intl.DateTimeFormat('en-US', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(`${tx.timestamp*1000}`)} </td>
                                         <td>{tx.tx_total}</td>
-                                        <td><Link to={`/block/${tx.tx_hash}`} key={tx.tx_hash}>{tx.tx_hash}</Link></td>
+                                        <td><Link to={`/block/${tx.tx_hash}`} key={tx.tx_hash}>{this.truncate(`${tx.tx_hash}`)}</Link></td>
                                     </tr>
                                 )
                             }
@@ -70,10 +73,6 @@ class LastTx extends Component {
 
         )
     }
-}
-
-export function readableDateTime(dt) {
-    return new Date(dt)
 }
 
 export default LastTx;
