@@ -12,5 +12,8 @@ if (argv.hasOwnProperty('module')) {
         case 'reset':
             require('./modules/reset.js');
         break;
+        case 'markets':
+            require('./modules/markets.js');
+        break;
     }
 }
