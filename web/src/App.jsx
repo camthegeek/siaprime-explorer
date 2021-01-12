@@ -11,7 +11,8 @@ class App extends Component {
     totalStorage: '',
     usedStorage: '',
     lastblocks: [],
-    lasttx: []
+    lasttx: [],
+    market: [],
 }
 componentDidMount() {
     axios.get('https://'+config.api.url+':'+config.api.port+'/api/health')
@@ -44,6 +45,16 @@ componentDidMount() {
           
             this.setState({
               lasttx: lastTxs.data
+            })
+        }).catch((err) => { 
+            console.log(err);
+        })
+
+        axios.get('https://api.coingecko.com/api/v3/coins/siaprime-coin')
+        .then(marketData => {
+            //console.log(JSON.parse(JSON.stringify(marketData.data)));
+            this.setState({
+              market: JSON.parse(JSON.stringify(marketData.data))
             })
         }).catch((err) => { 
             console.log(err);
