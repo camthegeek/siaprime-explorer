@@ -16,11 +16,8 @@ const knex = require('knex')({
     },
 });
 const request = require('request-promise');
-const { attachOnDuplicateUpdate } = require('knex-on-duplicate-update');
-attachOnDuplicateUpdate();
-const cors = require('cors'); // I added cors just in case it's ever needed.. but thinking we don't need it, ever.
 
-console.log('markets online')
+console.log('Market data saver is now online')
 
 function createMarketTable() {
     return knex.schema
@@ -39,6 +36,7 @@ function createMarketTable() {
 }
 
 async function startUp() {  // the main function ran when script is started
+    console.log('['+new Date()+'] Updating values..')
     let hasMarketTable = await knex.schema.hasTable("markets"); // check to see if block table exists
     if (hasMarketTable == false) {  // if not
         createMarketTable().then((created) => { // create tables
@@ -53,15 +51,14 @@ async function startUp() {  // the main function ran when script is started
 async function getValues() {
     request('https://api.coingecko.com/api/v3/coins/siaprime-coin')
     .then((data) => {
-        //console.log(data);
         data = JSON.parse(data);
-        //console.log(data.market_data)
         let timestamp = +new Date();
         let btcv = data.market_data.current_price.btc;
         let usdv = data.market_data.current_price.usd;
         let eurv = data.market_data.current_price.eur;
         saveValues(timestamp, btcv, usdv, eurv)
         .then((saved) => {
+            console.log('Values updated');
             setTimeout(startUp, 300000);
         })
         .catch((err) => {
@@ -72,24 +69,21 @@ async function getValues() {
 
 
 // then we save the data
-
 async function saveValues(ts, btc, usd, eur) {
     return new Promise((resolve) => {
-
         return knex('markets').insert({
             timestamp: ts,
             btc_value: btc,
             usd_value: usd,
             eur_value: eur
+        })
+        .then((res) => {
+            resolve('true');
+        })
+        .catch((error) => {
+            console.log(error);
+        })
     })
-    .then((res) => {
-        resolve('true');
-    })
-    .catch((error) => {
-        console.log(error);
-    })
-
-})
 }
 
 startUp();
