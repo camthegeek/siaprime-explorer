@@ -6,7 +6,7 @@ class BlockData extends Component {
         blockdata: [],
     }
     componentDidMount() {
-        axios.get('http://'+config.api.url+':'+config.api.port+'/api/health')
+        axios.get('https://'+config.api.url+':'+config.api.port+'/api/health')
         .then(blockStuff => {
             console.log(blockStuff.data);
             this.setState({ blockdata: blockStuff.data })

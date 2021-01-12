@@ -14,7 +14,7 @@ class App extends Component {
     lasttx: []
 }
 componentDidMount() {
-    axios.get('http://'+config.api.url+':'+config.api.port+'/api/health')
+    axios.get('https://'+config.api.url+':'+config.api.port+'/api/health')
         .then(blockStuff => {
             let hr = getReadableHashRateString(blockStuff.data.difficulty / blockStuff.data.blockfrequency);
             let sb = getReadableStorageString(blockStuff.data.totalStorage);
@@ -30,7 +30,7 @@ componentDidMount() {
             console.log(err);
         })
 
-        axios.get('http://'+config.api.url+':'+config.api.port+'/api/last/10/blocks')
+        axios.get('https://'+config.api.url+':'+config.api.port+'/api/last/10/blocks')
         .then(lastBlocks => {
             this.setState({
                 lastblocks: lastBlocks.data
@@ -39,8 +39,9 @@ componentDidMount() {
             console.log(err);
         })
 
-        axios.get('http://'+config.api.url+':'+config.api.port+'/api/last/10/tx')
+        axios.get('https://'+config.api.url+':'+config.api.port+'/api/last/10/tx')
         .then(lastTxs => {
+          
             this.setState({
               lasttx: lastTxs.data
             })
