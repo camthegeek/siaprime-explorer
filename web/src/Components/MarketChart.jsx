@@ -48,10 +48,6 @@ class MarketCharts extends Component {
                 enabled: true
             },
             colors: ['#FF9900', '#00FF00'],
-            title: {
-              text: 'cams getting irritated at charts.',
-              align: 'left'
-            },
             grid: {
                 show: false,
                 strokeDashArray: 1,
