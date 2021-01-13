@@ -166,7 +166,7 @@ async function getContract(id) {
 
 async function getMarkets(amount) { 
     return new Promise((resolve) => { 
-        resolve(knex('markets').select('*').limit(amount).orderBy('timestamp', 'asc'));
+        resolve(knex('markets').select('*').limit(amount).orderBy('timestamp', 'desc'));
     })
 }
 
