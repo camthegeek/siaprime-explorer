@@ -297,3 +297,23 @@ app.get('/api/between/:start/:end', cache.route(), async (req, res) => {
         })
     })
 });
+
+
+/* api route
+    fetch market data - :amount = amount of rows to fetch
+    take note, each row should be 5 minutes apart.
+    1 hour = 12 rows.
+    1 day = 288 rows.
+    7 days = 2016 rows
+    14 days = 4032
+    30 days = 8640
+    web front end will eventually have a button which will make a call to each of these numbers above to change a chart view.
+*/
+app.get('/api/market/:amount', cache.route(), async (req, res) => { 
+    support.getMarkets(req.params.amount)
+    .then((markets) => {
+        res.send({
+            "data": markets
+        })
+    });
+});
