@@ -3,7 +3,7 @@ const app = express();
 const cors = require('cors');
 const support = require('./support.js');
 const config = require('../config.json');
-var cache = require('express-redis-cache')({ prefix: 'scpe' });
+var cache = require('express-redis-cache')({ prefix: 'scpe', expire: 120 });
 var scprimecoinprecision = config.general.precision;
 app.use(cors());
 
@@ -59,7 +59,7 @@ app.get('/api/tx/:id', cache.route(), (req, res) => {
     Get totals for single address
 */
 
-app.get('/api/total/:addr', cache.route('addr'), (req, res) => {
+app.get('/api/total/:addr', cache.route(), (req, res) => {
     support.getAddressTotal(req.params.addr)
         .then((data) => {
             console.log(data);
@@ -81,7 +81,7 @@ app.get('/api/total/:addr', cache.route('addr'), (req, res) => {
         })
 })
 /* api route for address info */
-app.get('/api/address/:addr', cache.route({ expire: 60 }), async (req, res) => {
+app.get('/api/address/:addr', cache.route(), async (req, res) => {
     console.log(req.params.addr); // let's see wtf is being req
     let address_totals = await support.getAddressTotal(req.params.addr);
     support.getAddress(req.params.addr)
@@ -125,7 +125,7 @@ app.get('/api/address/:addr', cache.route({ expire: 60 }), async (req, res) => {
 
 });
 /* api route for contract info */
-app.get('/api/contract/:contract', (req, res) => {
+app.get('/api/contract/:contract', cache.route(), (req, res) => {
     console.log('contract api hit')
     support.getContract(req.params.contract)
         .then((contractData) => {
@@ -204,7 +204,7 @@ app.get('/api/health', async (req, res) => {
 })
 
 
-app.get('/api/last/:amount/:type', async(req, res) => {
+app.get('/api/last/:amount/:type', cache.route(), async(req, res) => {
     let last = await support.getLast(req.params.amount, req.params.type);
     res.send(last);
 })
@@ -217,7 +217,7 @@ app.get('/', (req, res) => {
     });
 });
 /* api route for block info */
-app.get('/api/block/:id',  cache.route({ expire: 60 }), (req, res) => {
+app.get('/api/block/:id',  cache.route(), (req, res) => {
     support.getInfoBlock(req.params.id).then((block) => {
         if (block.length<1) {
             res.send({
