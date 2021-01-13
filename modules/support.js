@@ -170,6 +170,12 @@ async function getMarkets(amount) {
     })
 }
 
+async function resetMarkets() {
+    return new Promise((resolve) => {
+        resolve(knex.schema.dropTableIfExists('markets'));
+    })
+}
+
 module.exports = {
     getTx,
     getAddress,
