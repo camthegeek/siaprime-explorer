@@ -21,8 +21,8 @@ class MarketCharts extends Component {
           options: {
             chart: {
                 id: 'scp-test',
-                height: 400,
-                width: 600,
+                height: 'auto',
+                width: 'auto',
                 type: 'line',
                 animations: {
                     enabled: true,
