@@ -3,7 +3,7 @@ const app = express();
 const cors = require('cors');
 const support = require('./support.js');
 const config = require('../config.json');
-var cache = require('express-redis-cache')({ prefix: 'scpe', expire: 120 });
+var cache = require('express-redis-cache')({ prefix: 'scpec', expire: 120 });
 var scprimecoinprecision = config.general.precision;
 app.use(cors());
 
