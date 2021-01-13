@@ -127,18 +127,199 @@ class MarketCharts extends Component {
 			
         })
     }
+    resetSomething = () => {
+        this.setState({
+            series: [
+                {
+                name: '',
+                data: []
+            },    
+            {
+                name: '',
+                data: []
+            }
+        ]
+        })
+    }
+    getHourly = () => {
+        dataPoints = [];
+        usdPoints = [];
+        this.resetSomething();
+        console.log('get hourly poked');
+        axios.get('https://api.aeon.run/api/market/13')
+		.then((response) => {
+			return response.data.data;
+		})
+		.then((data) => {
+			for (var i = 0; i < data.length; i++) {
+				dataPoints.push({
+					x: new Date(data[i].timestamp*1).getTime(),
+					y: data[i].btc_value
+                });
+                usdPoints.push({
+                    x: new Date(data[i].timestamp*1).getTime(),
+                    y: data[i].usd_value
+                })
+            }
+            this.setState({
+                series: [{
+                    name: 'Bitcoin value',
+                    data: dataPoints
+                },
+                {
+                    name: 'USD value',
+                    data: usdPoints
+                }]
+            })
+        })
+    }
+    getDaily = () => {
+        console.log('get daily poked');
+        dataPoints = [];
+        usdPoints = [];
+        this.resetSomething();
+        axios.get('https://api.aeon.run/api/market/289')
+		.then((response) => {
+			return response.data.data;
+		})
+		.then((data) => {
+			for (var i = 0; i < data.length; i++) {
+				dataPoints.push({
+					x: new Date(data[i].timestamp*1).getTime(),
+					y: data[i].btc_value
+                });
+                usdPoints.push({
+                    x: new Date(data[i].timestamp*1).getTime(),
+                    y: data[i].usd_value
+                })
+            }
+            this.setState({
+                series: [{
+                    name: 'Bitcoin value',
+                    data: dataPoints
+                },
+                {
+                    name: 'USD value',
+                    data: usdPoints
+                }]
+            })
+        })
+    }
+    getWeekly = () => {
+        console.log('get weekly poked');
+        dataPoints = [];
+        usdPoints = [];
+        this.resetSomething();
+        axios.get('https://api.aeon.run/api/market/2016')
+		.then((response) => {
+			return response.data.data;
+		})
+		.then((data) => {
+			for (var i = 0; i < data.length; i++) {
+				dataPoints.push({
+					x: new Date(data[i].timestamp*1).getTime(),
+					y: data[i].btc_value
+                });
+                usdPoints.push({
+                    x: new Date(data[i].timestamp*1).getTime(),
+                    y: data[i].usd_value
+                })
+            }
+            this.setState({
+                series: [{
+                    name: 'Bitcoin value',
+                    data: dataPoints
+                },
+                {
+                    name: 'USD value',
+                    data: usdPoints
+                }]
+            })
+        })
+    }
+    getMonthly = () => {
+        console.log('get monthly poked');
+        dataPoints = [];
+        usdPoints = [];
+        this.resetSomething();
+        axios.get('https://api.aeon.run/api/market/8640')
+		.then((response) => {
+			return response.data.data;
+		})
+		.then((data) => {
+			for (var i = 0; i < data.length; i++) {
+				dataPoints.push({
+					x: new Date(data[i].timestamp*1).getTime(),
+					y: data[i].btc_value
+                });
+                usdPoints.push({
+                    x: new Date(data[i].timestamp*1).getTime(),
+                    y: data[i].usd_value
+                })
+            }
+            this.setState({
+                series: [{
+                    name: 'Bitcoin value',
+                    data: dataPoints
+                },
+                {
+                    name: 'USD value',
+                    data: usdPoints
+                }]
+            })
+        })
+    }
+    getYearly = () => {
+        console.log('get year poked');
+        dataPoints = [];
+        usdPoints = [];
+        this.resetSomething();
+        axios.get('https://api.aeon.run/api/market/103680')
+		.then((response) => {
+			return response.data.data;
+		})
+		.then((data) => {
+			for (var i = 0; i < data.length; i++) {
+				dataPoints.push({
+					x: new Date(data[i].timestamp*1).getTime(),
+					y: data[i].btc_value
+                });
+                usdPoints.push({
+                    x: new Date(data[i].timestamp*1).getTime(),
+                    y: data[i].usd_value
+                })
+            }
+            this.setState({
+                series: [{
+                    name: 'Bitcoin value',
+                    data: dataPoints
+                },
+                {
+                    name: 'USD value',
+                    data: usdPoints
+                }]
+            })
+        })
+    }
     render() {
         return (
             <div className="col-xl-12 col-sm-12 col-12 mt-2 mb-2">
                 <div className="card">
                     <div className="card-body">
-
+                    <div class="row">
+                        <span className="btn btn-light" onClick={this.getHourly}>Hour</span>
+                        <span className="btn btn-light" onClick={this.getDaily}>Day</span>
+                        <span className="btn btn-light" onClick={this.getWeekly}>Week</span>
+                        <span className="btn btn-light" onClick={this.getMonthly}>Month</span>
+                        <span className="btn btn-light" onClick={this.getYearly}>Year</span>
+                        <span className="btn btn-light">All</span> 
+                    </div>
+                    <div class="row">
                     <Chart
                     options={this.state.options}
                     series={this.state.series}
                     />
-
-                    {console.log(`${this.state.series.data}`)}
+                    </div>
                     </div>
                 </div>
             </div>
