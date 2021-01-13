@@ -99,7 +99,6 @@ class MarketCharts extends Component {
         }
       }
     componentDidMount(){
-		var chart = this.chart;
 		axios.get('https://api.aeon.run/api/market/287')
 		.then((response) => {
 			return response.data.data;
