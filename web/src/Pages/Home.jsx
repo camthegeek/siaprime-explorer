@@ -3,12 +3,14 @@ import NetworkData from '../Components/Network';
 import LastBlocks from '../Components/LastBlocks';
 import LastTx from '../Components/LastTx';
 import MarketData from '../Components/Market';
+import MarketChart from '../Components/MarketChart';
 
 class Home extends Component {
     render() {
         return(
             <section className="container">
                 <MarketData data={this.props.morestates}/>
+                <MarketChart/>
                 <NetworkData data={this.props.morestates}/>
                 <div className="container-fluid">
                     <div className="row">
