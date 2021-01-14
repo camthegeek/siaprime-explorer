@@ -339,7 +339,7 @@ class MarketCharts extends Component {
                         <NumberFormat value={this.props.data.market.market_data.circulating_supply} displayType={'text'} thousandSeparator={true} suffix={' SCP'}/>
                         </div>
                         <div className="col-xl-2 col-sm-6 col-2">
-                        <h6 className="text-muted">all time high</h6><br/>
+                        <h6 className="text-muted">All Time High</h6><br/>
                         <NumberFormat value={this.props.data.market.market_data.ath.usd} displayType={'text'} thousandSeparator={true} prefix={'$'}/>
                         </div>
                     </div>
