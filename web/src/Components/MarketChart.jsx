@@ -302,7 +302,7 @@ class MarketCharts extends Component {
             <div className="col-xl-12 col-sm-12 col-12 mt-2 mb-2">
                 <div className="card">
                     <div className="card-body">
-                    <div class="row">
+                    <div className="row">
                         <span className="btn btn-light" onClick={this.getHourly}>Hour</span>
                         <span className="btn btn-light" onClick={this.getDaily}>Day</span>
                         <span className="btn btn-light" onClick={this.getWeekly}>Week</span>
@@ -310,7 +310,7 @@ class MarketCharts extends Component {
                         <span className="btn btn-light" onClick={this.getYearly}>Year</span>
                         <span className="btn btn-light">All</span> 
                     </div>
-                    <div class="row">
+                    <div className="row">
                     <Chart
                     options={this.state.options}
                     series={this.state.series}
