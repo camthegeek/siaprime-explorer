@@ -3,8 +3,25 @@ import axios from 'axios';
 import Chart from "react-apexcharts";
 import NumberFormat from "react-number-format";
 
-let dataPoints = []; 
-let usdPoints = [];
+/*
+    The variables never get reset but they can.
+    There's probably an easier way to calculate dates and junk too 
+*/
+
+let today = new Date(); // returns a full datetime string
+let now = +new Date(); // same as above but in JS timestamp
+let monthago = new Date().setDate(today.getDate()-30); // get date 30 days from today.
+let dayago = new Date().setDate(today.getDate()-1); // get date 1 day from today.
+let weekago = new Date().setDate(today.getDate()-7); // get date 7 days from today.
+let hourago = new Date().setHours(today.getHours()-1); // get date 1 hour from today.
+let yearago = new Date().setDate(today.getDate()-365); // get date 1 year from today.
+let all = new Date('2018-10-30'); // untested
+
+let cgPrice = []; // array for coingecko coin price in USD.
+let cgMarketcap = []; // array for coingecko coin market_cap in USD.
+let cgVolumes = []; // array for coingecko coin total_volumes in USD.
+let cgBtcprice = []; // array for coingecko coin price in BTC.
+
 class MarketCharts extends Component {
     constructor(props) {
         super(props);
@@ -12,18 +29,30 @@ class MarketCharts extends Component {
           series: [
                 {
                     name: 'Bitcoin value',
-                    data: []
+                    data: [],
+                    type: 'line',
                 },
                 {
                     name: 'USD value',
-                    data: []
+                    data: [],
+                    type: 'line'
+                },
+                {
+                    name: 'Volume',
+                    data: [],
+                    type: 'area'
                 }
-
+        ],
+        series2: [
+            {
+                name: 'Market Cap',
+                data: [],
+                type: 'area'
+            }
         ],
           options: {
             chart: {
-                id: 'scp-test',
-                type: 'line',
+                id: 'scp',
                 animations: {
                     enabled: true,
                     easing: 'linear',
@@ -47,78 +76,178 @@ class MarketCharts extends Component {
             zoom: {
                 enabled: true
             },
-            colors: ['#FF9900', '#00FF00'],
-            grid: {
-                show: false,
-                strokeDashArray: 1,
-                borderColor: "#00ff00",
-                xaxis: {
-                    lines: {
-                        show: true
-                    }
-                },
-                yaxis: {
-                    lines: {
-                        show: true
-                    }
-                },
-            },
+            colors: ['#FF9900', '#00FF00', '#0F00FF'],
             tooltip: {
               enabled: true,
               style: {
                 fontSize: '12px',
                 fontFamily: undefined
-            },
+                },
+                x: {
+                    formatter: function (timestamp) {
+                        return new Date(timestamp);
+                    }, 
+                }
             },
             stroke: {
-                curve: 'smooth',
+                curve: 'straight',
                 width: 2  
             },
             xaxis: {
                 type: 'datetime',
                 lines: {
                     show: true               
-                }
-
+                }                
             },
             yaxis: [
                 {
-                    seriesName: 'Bitcoin value'
+                    seriesName: 'Bitcoin value',
+                    show: false,
+                    labels: {
+                        formatter: (val, index) => {
+                            return val.toFixed(8); },
+                        }
                 },
                 {
                     seriesName: 'USD value',
-                    opposite: true
+                    show: false,
+                    labels: {
+                        formatter: (val, index) => {
+                            return '$'+val.toLocaleString(); },
+                        }
+                },
+                {
+                    seriesName: 'Volume',
+                    opposite: true,
+                    show: false,
+                    labels: {
+                    formatter: (val, index) => {
+                        return '$'+val.toLocaleString(); },
+                    }
+                }                
+            ]      
+          },
+          options2: {
+            chart: {
+                id: 'scp-mc',
+                animations: {
+                    enabled: true,
+                    easing: 'linear',
+                    dynamicAnimation: {
+                        speed: 1000
+                    }
+                },
+            },
+            toolbar: {
+                show: false,
+                tools: {
+                    download: false,
+                    selection: false,
+                    zoom: false,
+                    zoomin: false,
+                    zoomout: false,
+                    pan: false,
+                    reset: false
+                },
+            },
+            colors: ['#d1d1d1'],
+            tooltip: {
+              enabled: true,
+              style: {
+                fontSize: '12px',
+                fontFamily: undefined
+                },
+                x: {
+                    formatter: function (timestamp) {
+                        return new Date(timestamp)
+                    }, 
                 }
+            },
+            stroke: {
+                curve: 'straight',
+                width: 2  
+            },
+            xaxis: {
+                type: 'datetime',
+                lines: {
+                    show: true               
+                }                
+            },
+            yaxis: [
+                {
+                    seriesName: 'Market Cap',
+                    show: false,
+                    labels: {
+                    formatter: (val, index) => {
+                        return '$'+val.toLocaleString(); },
+                    }
+                }
+                
             ]          
                    
           }
         }
       }
     componentDidMount(){
-		axios.get('https://api.aeon.run/api/market/287')
+		axios.get('https://api.coingecko.com/api/v3/coins/siaprime-coin/market_chart/range?vs_currency=USD&from='+parseInt(dayago/1000)+'&to='+parseInt(now/1000))
 		.then((response) => {
-			return response.data.data;
+			return response.data;
 		})
 		.then((data) => {
-			for (var i = 0; i < data.length; i++) {
-				dataPoints.push({
-					x: new Date(data[i].timestamp*1).getTime(),
-					y: data[i].btc_value
+			for (var i = 0; i < data.prices.length; i++) {
+				cgPrice.push({
+                    x: new Date(data.prices[i]["0"]).getTime(),
+					y: data.prices[i]["1"]
                 });
-                usdPoints.push({
-                    x: new Date(data[i].timestamp*1).getTime(),
-                    y: data[i].usd_value
+            }
+            for (var i = 0; i < data.total_volumes.length; i++) {
+                cgVolumes.push({
+                    x: new Date(data.total_volumes[i]["0"]).getTime(),
+                    y: data.total_volumes[i]["1"]
                 })
             }
-            this.setState({
-                series: [{
-                    name: 'Bitcoin value',
-                    data: dataPoints
-                },
-                {
-                    name: 'USD value',
-                    data: usdPoints
-                }]
+            for (var i = 0; i < data.market_caps.length; i++) {
+                cgMarketcap.push({
+                    x: new Date(data.market_caps[i]["0"]).getTime(),
+                    y: data.market_caps[i]["1"]
+                });
+             }
+             axios.get('https://api.coingecko.com/api/v3/coins/siaprime-coin/market_chart/range?vs_currency=BTC&from='+parseInt(dayago/1000)+'&to='+parseInt(now/1000))
+                .then((response) => {
+                    return response.data;
+                })
+                .then((data) => {
+                    for (var i = 0; i < data.prices.length; i++) {
+                        cgBtcprice.push({
+                            x: new Date(data.prices[i]["0"]).getTime(),
+                            y: data.prices[i]["1"]
+                        });
+                    }
+                this.setState({
+                    series: [
+                        {
+                        name: 'Bitcoin value',
+                        data: cgBtcprice,
+                        type: 'line'
+                    },
+                    {
+                        name: 'USD value',
+                        data: cgPrice,
+                        type: 'line'
+                    },
+                    {
+                        name: 'Volume',
+                        data: cgVolumes,
+                        type: 'area'
+                    },
+                ],
+                series2: [
+                    {
+                        name: 'Market Cap',
+                        data: cgMarketcap,
+                        type: 'bar'
+                    }]
+                })
             })
 			
         })
@@ -127,177 +256,381 @@ class MarketCharts extends Component {
         })
     }
     resetSomething = () => {
+        cgPrice = [];
+        cgMarketcap = [];
+        cgVolumes = [];
+        cgBtcprice = [];
         this.setState({
             series: [
                 {
                 name: '',
-                data: []
+                data: [],
+                type: 'line'
             },    
             {
                 name: '',
-                data: []
+                data: [],
+                type: 'line'
+            },
+            {
+                name: '',
+                data: [],
+                type: 'area'
+            }],
+            series2: [
+            {
+                name: '',
+                data: [],
+                type: 'bar'
             }
         ]
         })
     }
     getHourly = () => {
-        dataPoints = [];
-        usdPoints = [];
         this.resetSomething();
         console.log('get hourly poked');
-        axios.get('https://api.aeon.run/api/market/13')
+        axios.get('https://api.coingecko.com/api/v3/coins/siaprime-coin/market_chart/range?vs_currency=USD&from='+parseInt(hourago/1000)+'&to='+parseInt(now/1000))
 		.then((response) => {
-			return response.data.data;
+			return response.data;
 		})
 		.then((data) => {
-			for (var i = 0; i < data.length; i++) {
-				dataPoints.push({
-					x: new Date(data[i].timestamp*1).getTime(),
-					y: data[i].btc_value
+			for (var i = 0; i < data.prices.length; i++) {
+				cgPrice.push({
+                    x: new Date(data.prices[i]["0"]).getTime(),
+					y: data.prices[i]["1"]
                 });
-                usdPoints.push({
-                    x: new Date(data[i].timestamp*1).getTime(),
-                    y: data[i].usd_value
+            }
+            for (var i = 0; i < data.total_volumes.length; i++) {
+                cgVolumes.push({
+                    x: new Date(data.total_volumes[i]["0"]).getTime(),
+                    y: data.total_volumes[i]["1"]
                 })
             }
-            this.setState({
-                series: [{
-                    name: 'Bitcoin value',
-                    data: dataPoints
-                },
-                {
-                    name: 'USD value',
-                    data: usdPoints
-                }]
+            for (var i = 0; i < data.market_caps.length; i++) {
+                cgMarketcap.push({
+                    x: new Date(data.market_caps[i]["0"]).getTime(),
+                    y: data.market_caps[i]["1"]
+                });
+             }
+             axios.get('https://api.coingecko.com/api/v3/coins/siaprime-coin/market_chart/range?vs_currency=BTC&from='+parseInt(hourago/1000)+'&to='+parseInt(now/1000))
+                .then((response) => {
+                    return response.data;
+                })
+                .then((data) => {
+                    for (var i = 0; i < data.prices.length; i++) {
+                        cgBtcprice.push({
+                            x: new Date(data.prices[i]["0"]).getTime(),
+                            y: data.prices[i]["1"]
+                        });
+                    }
+                this.setState({
+                    series: [
+                        {
+                        name: 'Bitcoin value',
+                        data: cgBtcprice,
+                        type: 'line'
+                    },
+                    {
+                        name: 'USD value',
+                        data: cgPrice,
+                        type: 'line'
+                    },
+                    {
+                        name: 'Volume',
+                        data: cgVolumes,
+                        type: 'area'
+                    },
+                ],
+                series2: [
+                    {
+                        name: 'Market Cap',
+                        data: cgMarketcap,
+                        type: 'bar'
+                    }]
+                })
             })
+			
+        })
+        .catch((error) => {
+            console.log(error)
         })
     }
     getDaily = () => {
-        console.log('get daily poked');
-        dataPoints = [];
-        usdPoints = [];
         this.resetSomething();
-        axios.get('https://api.aeon.run/api/market/289')
+        console.log('get hourly poked');
+        axios.get('https://api.coingecko.com/api/v3/coins/siaprime-coin/market_chart/range?vs_currency=USD&from='+parseInt(dayago/1000)+'&to='+parseInt(now/1000))
 		.then((response) => {
-			return response.data.data;
+			return response.data;
 		})
 		.then((data) => {
-			for (var i = 0; i < data.length; i++) {
-				dataPoints.push({
-					x: new Date(data[i].timestamp*1).getTime(),
-					y: data[i].btc_value
+			for (var i = 0; i < data.prices.length; i++) {
+				cgPrice.push({
+                    x: new Date(data.prices[i]["0"]).getTime(),
+					y: data.prices[i]["1"]
                 });
-                usdPoints.push({
-                    x: new Date(data[i].timestamp*1).getTime(),
-                    y: data[i].usd_value
+            }
+            for (var i = 0; i < data.total_volumes.length; i++) {
+                cgVolumes.push({
+                    x: new Date(data.total_volumes[i]["0"]).getTime(),
+                    y: data.total_volumes[i]["1"]
                 })
             }
-            this.setState({
-                series: [{
-                    name: 'Bitcoin value',
-                    data: dataPoints
-                },
-                {
-                    name: 'USD value',
-                    data: usdPoints
-                }]
+            for (var i = 0; i < data.market_caps.length; i++) {
+                cgMarketcap.push({
+                    x: new Date(data.market_caps[i]["0"]).getTime(),
+                    y: data.market_caps[i]["1"]
+                });
+             }
+             axios.get('https://api.coingecko.com/api/v3/coins/siaprime-coin/market_chart/range?vs_currency=BTC&from='+parseInt(dayago/1000)+'&to='+parseInt(now/1000))
+                .then((response) => {
+                    return response.data;
+                })
+                .then((data) => {
+                    for (var i = 0; i < data.prices.length; i++) {
+                        cgBtcprice.push({
+                            x: new Date(data.prices[i]["0"]).getTime(),
+                            y: data.prices[i]["1"]
+                        });
+                    }
+                this.setState({
+                    series: [
+                        {
+                        name: 'Bitcoin value',
+                        data: cgBtcprice,
+                        type: 'line'
+                    },
+                    {
+                        name: 'USD value',
+                        data: cgPrice,
+                        type: 'line'
+                    },
+                    {
+                        name: 'Volume',
+                        data: cgVolumes,
+                        type: 'area'
+                    },
+                ],
+                series2: [
+                    {
+                        name: 'Market Cap',
+                        data: cgMarketcap,
+                        type: 'bar'
+                    }]
+                })
             })
+			
+        })
+        .catch((error) => {
+            console.log(error)
         })
     }
     getWeekly = () => {
-        console.log('get weekly poked');
-        dataPoints = [];
-        usdPoints = [];
         this.resetSomething();
-        axios.get('https://api.aeon.run/api/market/2016')
+        console.log('get hourly poked');
+        axios.get('https://api.coingecko.com/api/v3/coins/siaprime-coin/market_chart/range?vs_currency=USD&from='+parseInt(weekago/1000)+'&to='+parseInt(now/1000))
 		.then((response) => {
-			return response.data.data;
+			return response.data;
 		})
 		.then((data) => {
-			for (var i = 0; i < data.length; i++) {
-				dataPoints.push({
-					x: new Date(data[i].timestamp*1).getTime(),
-					y: data[i].btc_value
+			for (var i = 0; i < data.prices.length; i++) {
+				cgPrice.push({
+                    x: new Date(data.prices[i]["0"]).getTime(),
+					y: data.prices[i]["1"]
                 });
-                usdPoints.push({
-                    x: new Date(data[i].timestamp*1).getTime(),
-                    y: data[i].usd_value
+            }
+            for (var i = 0; i < data.total_volumes.length; i++) {
+                cgVolumes.push({
+                    x: new Date(data.total_volumes[i]["0"]).getTime(),
+                    y: data.total_volumes[i]["1"]
                 })
             }
-            this.setState({
-                series: [{
-                    name: 'Bitcoin value',
-                    data: dataPoints
-                },
-                {
-                    name: 'USD value',
-                    data: usdPoints
-                }]
+            for (var i = 0; i < data.market_caps.length; i++) {
+                cgMarketcap.push({
+                    x: new Date(data.market_caps[i]["0"]).getTime(),
+                    y: data.market_caps[i]["1"]
+                });
+             }
+             axios.get('https://api.coingecko.com/api/v3/coins/siaprime-coin/market_chart/range?vs_currency=BTC&from='+parseInt(weekago/1000)+'&to='+parseInt(now/1000))
+                .then((response) => {
+                    return response.data;
+                })
+                .then((data) => {
+                    for (var i = 0; i < data.prices.length; i++) {
+                        cgBtcprice.push({
+                            x: new Date(data.prices[i]["0"]).getTime(),
+                            y: data.prices[i]["1"]
+                        });
+                    }
+                this.setState({
+                    series: [
+                        {
+                        name: 'Bitcoin value',
+                        data: cgBtcprice,
+                        type: 'line'
+                    },
+                    {
+                        name: 'USD value',
+                        data: cgPrice,
+                        type: 'line'
+                    },
+                    {
+                        name: 'Volume',
+                        data: cgVolumes,
+                        type: 'area'
+                    },
+                ],
+                series2: [
+                    {
+                        name: 'Market Cap',
+                        data: cgMarketcap,
+                        type: 'bar'
+                    }]
+                })
             })
+			
+        })
+        .catch((error) => {
+            console.log(error)
         })
     }
     getMonthly = () => {
         console.log('get monthly poked');
-        dataPoints = [];
-        usdPoints = [];
         this.resetSomething();
-        axios.get('https://api.aeon.run/api/market/8640')
+        console.log('get hourly poked');
+        axios.get('https://api.coingecko.com/api/v3/coins/siaprime-coin/market_chart/range?vs_currency=USD&from='+parseInt(monthago/1000)+'&to='+parseInt(now/1000))
 		.then((response) => {
-			return response.data.data;
+			return response.data;
 		})
 		.then((data) => {
-			for (var i = 0; i < data.length; i++) {
-				dataPoints.push({
-					x: new Date(data[i].timestamp*1).getTime(),
-					y: data[i].btc_value
+			for (var i = 0; i < data.prices.length; i++) {
+				cgPrice.push({
+                    x: new Date(data.prices[i]["0"]).getTime(),
+					y: data.prices[i]["1"]
                 });
-                usdPoints.push({
-                    x: new Date(data[i].timestamp*1).getTime(),
-                    y: data[i].usd_value
+            }
+            for (var i = 0; i < data.total_volumes.length; i++) {
+                cgVolumes.push({
+                    x: new Date(data.total_volumes[i]["0"]).getTime(),
+                    y: data.total_volumes[i]["1"]
                 })
             }
-            this.setState({
-                series: [{
-                    name: 'Bitcoin value',
-                    data: dataPoints
-                },
-                {
-                    name: 'USD value',
-                    data: usdPoints
-                }]
+            for (var i = 0; i < data.market_caps.length; i++) {
+                cgMarketcap.push({
+                    x: new Date(data.market_caps[i]["0"]).getTime(),
+                    y: data.market_caps[i]["1"]
+                });
+             }
+             axios.get('https://api.coingecko.com/api/v3/coins/siaprime-coin/market_chart/range?vs_currency=BTC&from='+parseInt(monthago/1000)+'&to='+parseInt(now/1000))
+                .then((response) => {
+                    return response.data;
+                })
+                .then((data) => {
+                    for (var i = 0; i < data.prices.length; i++) {
+                        cgBtcprice.push({
+                            x: new Date(data.prices[i]["0"]).getTime(),
+                            y: data.prices[i]["1"]
+                        });
+                    }
+                this.setState({
+                    series: [
+                        {
+                        name: 'Bitcoin value',
+                        data: cgBtcprice,
+                        type: 'line'
+                    },
+                    {
+                        name: 'USD value',
+                        data: cgPrice,
+                        type: 'line'
+                    },
+                    {
+                        name: 'Volume',
+                        data: cgVolumes,
+                        type: 'area'
+                    },
+                ],
+                series2: [
+                    {
+                        name: 'Market Cap',
+                        data: cgMarketcap,
+                        type: 'bar'
+                    }]
+                })
             })
+			
+        })
+        .catch((error) => {
+            console.log(error)
         })
     }
     getYearly = () => {
         console.log('get year poked');
-        dataPoints = [];
-        usdPoints = [];
         this.resetSomething();
-        axios.get('https://api.aeon.run/api/market/103680')
+        console.log('get hourly poked');
+        axios.get('https://api.coingecko.com/api/v3/coins/siaprime-coin/market_chart/range?vs_currency=USD&from='+parseInt(yearago/1000)+'&to='+parseInt(now/1000))
 		.then((response) => {
-			return response.data.data;
+			return response.data;
 		})
 		.then((data) => {
-			for (var i = 0; i < data.length; i++) {
-				dataPoints.push({
-					x: new Date(data[i].timestamp*1).getTime(),
-					y: data[i].btc_value
+			for (var i = 0; i < data.prices.length; i++) {
+				cgPrice.push({
+                    x: new Date(data.prices[i]["0"]).getTime(),
+					y: data.prices[i]["1"]
                 });
-                usdPoints.push({
-                    x: new Date(data[i].timestamp*1).getTime(),
-                    y: data[i].usd_value
+            }
+            for (var i = 0; i < data.total_volumes.length; i++) {
+                cgVolumes.push({
+                    x: new Date(data.total_volumes[i]["0"]).getTime(),
+                    y: data.total_volumes[i]["1"]
                 })
             }
-            this.setState({
-                series: [{
-                    name: 'Bitcoin value',
-                    data: dataPoints
-                },
-                {
-                    name: 'USD value',
-                    data: usdPoints
-                }]
+            for (var i = 0; i < data.market_caps.length; i++) {
+                cgMarketcap.push({
+                    x: new Date(data.market_caps[i]["0"]).getTime(),
+                    y: data.market_caps[i]["1"]
+                });
+             }
+             axios.get('https://api.coingecko.com/api/v3/coins/siaprime-coin/market_chart/range?vs_currency=BTC&from='+parseInt(yearago/1000)+'&to='+parseInt(now/1000))
+                .then((response) => {
+                    return response.data;
+                })
+                .then((data) => {
+                    for (var i = 0; i < data.prices.length; i++) {
+                        cgBtcprice.push({
+                            x: new Date(data.prices[i]["0"]).getTime(),
+                            y: data.prices[i]["1"]
+                        });
+                    }
+                this.setState({
+                    series: [
+                        {
+                        name: 'Bitcoin value',
+                        data: cgBtcprice,
+                        type: 'line'
+                    },
+                    {
+                        name: 'USD value',
+                        data: cgPrice,
+                        type: 'line'
+                    },
+                    {
+                        name: 'Volume',
+                        data: cgVolumes,
+                        type: 'area'
+                    },
+                ],
+                series2: [
+                    {
+                        name: 'Market Cap',
+                        data: cgMarketcap,
+                        type: 'bar'
+                    }]
+                })
             })
+			
+        })
+        .catch((error) => {
+            console.log(error)
         })
     }
     render() {
@@ -324,26 +657,32 @@ class MarketCharts extends Component {
                     height='400'
                     width='100%'
                     />
+                    <Chart
+                    options={this.state.options2}
+                    series={this.state.series2}
+                    height='100'
+                    width='100%'
+                    />
                     </div>
                     </div>
                     <div className="row">
-                        <div className="col-xl-2 col-sm-6 col-2">
+                        <div className="col-xl-2 col-sm-12 mb-2">
                         <h6 className="text-muted">Market Cap</h6>
                         <NumberFormat decimalScale={'2'} value={this.props.data.market.market_data.market_cap.usd} displayType={'text'} thousandSeparator={true} prefix={'$'}/>
                         </div>
-                        <div className="col-xl-2 col-sm-6 col-2">
+                        <div className="col-xl-2 col-sm-12 mb-2">
                         <h6 className="text-muted">Total Volume (24h)</h6>
                         <NumberFormat decimalScale={'2'} value={this.props.data.market.market_data.total_volume.usd}  displayType={'text'} thousandSeparator={true} prefix={'$'}/>
                         </div>
-                        <div className="col-xl-3 col-sm-6 col-2">
+                        <div className="col-xl-3 col-sm-12 mb-2">
                         <h6 className="text-muted">Change (Market Cap 24h)</h6>
                         <NumberFormat decimalScale={'2'} value={this.props.data.market.market_data.market_cap_change_24h} displayType={'text'} thousandSeparator={true} prefix={'$'}/>
                         </div>
-                        <div className="col-xl-3 col-sm-6 col-2">
+                        <div className="col-xl-3 col-sm-12 mb-2">
                         <h6 className="text-muted">Circulating Supply</h6>
                         <NumberFormat value={this.props.data.market.market_data.circulating_supply} displayType={'text'} thousandSeparator={true} suffix={' SCP'}/>
                         </div>
-                        <div className="col-xl-2 col-sm-6 col-2">
+                        <div className="col-xl-2 col-sm-12 mb-2">
                         <h6 className="text-muted">All Time High</h6>
                         <NumberFormat decimalScale={'2'} value={this.props.data.market.market_data.ath.usd} displayType={'text'} thousandSeparator={true} prefix={'$'}/>
                         </div>
