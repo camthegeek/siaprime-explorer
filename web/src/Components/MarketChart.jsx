@@ -23,8 +23,6 @@ class MarketCharts extends Component {
           options: {
             chart: {
                 id: 'scp-test',
-                height: 'auto',
-                width: 'auto',
                 type: 'line',
                 animations: {
                     enabled: true,
@@ -316,10 +314,14 @@ class MarketCharts extends Component {
                         <span className="btn btn-light">All</span> 
                     </div>
                     <div className="row">
+                        <div className="col-xl-12 col-12">
                     <Chart
                     options={this.state.options}
                     series={this.state.series}
+                    height='400'
+                    width='100%'
                     />
+                    </div>
                     </div>
                     <div className="row">
                         <div className="col-xl-2 col-sm-6 col-2">
