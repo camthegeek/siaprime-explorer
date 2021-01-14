@@ -8,10 +8,14 @@ class NetworkData extends Component {
             <div className="container-fluid">
                 <div className="row">
                     <div className="col-12 mt-3 mb-1">
-                        <h2 className="card-title">
-                            <Server className="float-left" size={32}/>
-                            Network Stats
-                        </h2>
+                        <div className="card">
+                            <div className="card-body">
+                                <h2 className="card-title">
+                                    <Server className="float-left" size={32}/>
+                                    Network Stats
+                                </h2>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
