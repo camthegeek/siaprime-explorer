@@ -10,7 +10,7 @@ class Home extends Component {
         return(
             <section className="container">
                 <MarketData data={this.props.morestates}/>
-                <MarketChart/>
+                <MarketChart data={this.props.morestates}/>
                 <NetworkData data={this.props.morestates}/>
                 <div className="container-fluid">
                     <div className="row">
