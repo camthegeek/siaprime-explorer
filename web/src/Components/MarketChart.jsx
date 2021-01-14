@@ -323,23 +323,23 @@ class MarketCharts extends Component {
                     </div>
                     <div className="row">
                         <div className="col-xl-2 col-sm-6 col-2">
-                        <h5 className="text-muted">Market Cap</h5> <br/>
+                        <h6 className="text-muted">Market Cap</h6> <br/>
                         <NumberFormat value={this.props.data.market.market_data.market_cap.usd} displayType={'text'} thousandSeparator={true} prefix={'$'}/>
                         </div>
                         <div className="col-xl-2 col-sm-6 col-2">
-                        <h5 className="text-muted">Total Volume (24h)</h5> <br/>
+                        <h6 className="text-muted">Total Volume (24h)</h6> <br/>
                         <NumberFormat value={this.props.data.market.market_data.total_volume.usd}  displayType={'text'} thousandSeparator={true} prefix={'$'}/>
                         </div>
                         <div className="col-xl-3 col-sm-6 col-2">
-                        <h5 className="text-muted">Change (Market Cap 24h)</h5> <br/>
+                        <h6 className="text-muted">Change (Market Cap 24h)</h6> <br/>
                         <NumberFormat value={this.props.data.market.market_data.market_cap_change_24h} displayType={'text'} thousandSeparator={true} prefix={'$'}/>
                         </div>
                         <div className="col-xl-3 col-sm-6 col-2">
-                        <h5 className="text-muted">Circulating Supply</h5><br/>
+                        <h6 className="text-muted">Circulating Supply</h6><br/>
                         <NumberFormat value={this.props.data.market.market_data.circulating_supply} displayType={'text'} thousandSeparator={true} suffix={' SCP'}/>
                         </div>
                         <div className="col-xl-2 col-sm-6 col-2">
-                        <h5 className="text-muted">all time high</h5><br/>
+                        <h6 className="text-muted">all time high</h6><br/>
                         <NumberFormat value={this.props.data.market.market_data.ath.usd} displayType={'text'} thousandSeparator={true} prefix={'$'}/>
                         </div>
                     </div>
