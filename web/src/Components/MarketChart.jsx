@@ -122,6 +122,9 @@ class MarketCharts extends Component {
             })
 			
         })
+        .catch((error) => {
+            console.log(error)
+        })
     }
     resetSomething = () => {
         this.setState({
