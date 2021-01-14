@@ -41,7 +41,7 @@ componentDidMount() {
             console.log(err);
         })
 
-        axios.get('https://'+config.api.url+':'+config.api.port+'/api/last/10/tx')
+        axios.get('https://'+config.api.url+':'+config.api.port+'/api/last/20/tx')
         .then(lastTxs => {
           
             this.setState({
