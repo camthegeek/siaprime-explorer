@@ -298,6 +298,9 @@ class MarketCharts extends Component {
         })
     }
     render() {
+        if (!this.props.data.market.market_data) {
+            return null;
+        }
         return (
             <div className="col-xl-12 col-sm-12 col-12 mt-2 mb-2">
                 <div className="card">
