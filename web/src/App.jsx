@@ -3,6 +3,7 @@ import './Stylesheets/App.css';
 import Container from "./Components/Container";
 import axios from 'axios';
 import config from './config.json'
+import {Helmet} from "react-helmet";
 
 class App extends Component {
   state = {
@@ -64,6 +65,10 @@ componentDidMount() {
   render() { 
       return (
     <div className="App flex-fill">
+      <Helmet>
+        <meta charSet="utf-8" />
+        <title>ScPrime Block Explorer</title>
+      </Helmet>
       <Container data={this.state}/>
     </div>
   );
