@@ -1,6 +1,8 @@
 import React, { Component } from "react";
 import axios from 'axios';
 import Chart from "react-apexcharts";
+import NumberFormat from "react-number-format";
+
 let dataPoints = []; 
 let usdPoints = [];
 class MarketCharts extends Component {
@@ -322,23 +324,23 @@ class MarketCharts extends Component {
                     <div className="row">
                         <div className="col-xl-2 col-sm-6 col-2">
                         <h5 className="text-muted">Market Cap</h5> <br/>
-                        {this.props.data.market.market_data.market_cap.usd}
+                        <NumberFormat value={this.props.data.market.market_data.market_cap.usd} displayType={'text'} thousandSeparator={true} prefix={'$'}/>
                         </div>
                         <div className="col-xl-2 col-sm-6 col-2">
                         <h5 className="text-muted">Total Volume (24h)</h5> <br/>
-                            {this.props.data.market.market_data.total_volume.usd}
+                        <NumberFormat value={this.props.data.market.market_data.total_volume.usd}  displayType={'text'} thousandSeparator={true} prefix={'$'}/>
                         </div>
                         <div className="col-xl-3 col-sm-6 col-2">
                         <h5 className="text-muted">Change (Market Cap 24h)</h5> <br/>
-                            {this.props.data.market.market_data.market_cap_change_24h}
+                        <NumberFormat value={this.props.data.market.market_data.market_cap_change_24h} displayType={'text'} thousandSeparator={true} prefix={'$'}/>
                         </div>
                         <div className="col-xl-3 col-sm-6 col-2">
                         <h5 className="text-muted">Circulating Supply</h5><br/>
-                            {this.props.data.market.market_data.circulating_supply}
+                        <NumberFormat value={this.props.data.market.market_data.circulating_supply} displayType={'text'} thousandSeparator={true} suffix={' SCP'}/>
                         </div>
                         <div className="col-xl-2 col-sm-6 col-2">
                         <h5 className="text-muted">all time high</h5><br/>
-                            {this.props.data.market.market_data.ath.usd}
+                        <NumberFormat value={this.props.data.market.market_data.ath.usd} displayType={'text'} thousandSeparator={true} prefix={'$'}/>
                         </div>
                     </div>
                     </div>
