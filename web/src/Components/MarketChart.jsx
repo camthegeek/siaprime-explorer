@@ -316,6 +316,28 @@ class MarketCharts extends Component {
                     series={this.state.series}
                     />
                     </div>
+                    <div className="row">
+                        <div className="col-xl-2 col-sm-6 col-2">
+                        <h5 className="text-muted">Market Cap</h5> <br/>
+                        {this.props.data.market.market_data.market_cap.usd}
+                        </div>
+                        <div className="col-xl-2 col-sm-6 col-2">
+                        <h5 className="text-muted">Total Volume (24h)</h5> <br/>
+                            {this.props.data.market.market_data.total_volume.usd}
+                        </div>
+                        <div className="col-xl-3 col-sm-6 col-2">
+                        <h5 className="text-muted">Change (Market Cap 24h)</h5> <br/>
+                            {this.props.data.market.market_data.market_cap_change_24h}
+                        </div>
+                        <div className="col-xl-3 col-sm-6 col-2">
+                        <h5 className="text-muted">Circulating Supply</h5><br/>
+                            {this.props.data.market.market_data.circulating_supply}
+                        </div>
+                        <div className="col-xl-2 col-sm-6 col-2">
+                        <h5 className="text-muted">all time high</h5><br/>
+                            {this.props.data.market.market_data.ath.usd}
+                        </div>
+                    </div>
                     </div>
                 </div>
             </div>
