@@ -15,14 +15,18 @@ class Home extends Component {
                     <title>ScPrime Block Explorer - Home</title>
                     <meta name="description" content="ScPrime Explorer - A faster, more efficient solution to browsing the ScPrime blockchain." />
                 </Helmet>
-                <MarketData data={this.props.morestates}/>
-                <MarketChart data={this.props.morestates}/>
-                <NetworkData data={this.props.morestates}/>
-                <div className="container-fluid">
-                    <div className="row">
-                <LastBlocks woot={this.props.morestates}/>
-                <LastTx lasttx={this.props.morestates}/>
+                <div className="row">
+                    <MarketData data={this.props.morestates}/>
                 </div>
+                <div className="row">
+                    <MarketChart data={this.props.morestates}/>
+                </div>
+                <div className="row">
+                    <NetworkData data={this.props.morestates}/>
+                </div>
+                <div className="row">
+                    <LastTx lasttx={this.props.morestates}/>
+                    <LastBlocks woot={this.props.morestates}/>
                 </div>
             </section>
         )
