@@ -77,7 +77,7 @@ componentDidMount() {
 
 export function getReadableHashRateString(hr) {
   var i = 0;
-  var byteUnits = [' H', ' KH', ' MH', ' GH', ' TH', ' PH'];
+  var byteUnits = [' H', ' KH', ' MH', ' GH', ' TH', ' PH', ' EH'];
   while (hr > 1000) {
       hr = hr / 1000;
       i++;
