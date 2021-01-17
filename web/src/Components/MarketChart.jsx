@@ -676,7 +676,7 @@ class MarketCharts extends Component {
                         </div>
                         <div className="col-xl-3 col-sm-12 mb-2">
                         <h6 className="text-muted">Change (Market Cap 24h)</h6>
-                        <NumberFormat decimalScale={'2'} value={this.props.data.market.market_data.market_cap_change_24h} displayType={'text'} thousandSeparator={true} prefix={'$'}/>
+                        <NumberFormat decimalScale={'2'} value={this.props.data.market.market_data.market_cap_change_24h} displayType={'text'} thousandSeparator={true} prefix={'$'} className={(this.props.data.market.market_data.market_cap_change_24h < 0) ? 'text-danger font-weight-bold' : 'text-success font-weight-bold' }/>
                         </div>
                         <div className="col-xl-3 col-sm-12 mb-2">
                         <h6 className="text-muted">Circulating Supply</h6>
