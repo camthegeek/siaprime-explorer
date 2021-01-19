@@ -18,9 +18,27 @@ const knex = require('knex')({
     },
 });
 
-function getTx(tx) {
+async function getTx(tx) {
+    let txArray = [];
+
+    if (tx.length == 64) {
+        let a = knex('transactions').where('tx_hash', tx).select('*');
+        txArray.push({
+            a            
+        })
+    } else {
+        let txs = await knex('transactions').where('block_height', tx).select('*');
+        for (var x = 0; x<txs.length; x++) {
+            txArray.push({
+                hash: txs[x].tx_hash,
+                type: txs[x].tx_type,
+                total: txs[x].tx_total,
+                fees: txs[x].fees
+            })
+        }
+    }
     return new Promise(resolve => {
-        resolve(knex('transactions').where('tx_hash', tx).select('*'));
+        resolve(txArray);
     })
 }
 function getAddress(address) {  // fetch the address from the database -- probably will return more than one result.

@@ -31,27 +31,31 @@ app.get('/api/tx/:id', cache.route(), (req, res) => {
                 });
                 return;
             }
-            res.json({
-                "height": results[0].block_height,
-                "hash": results[0].tx_hash,
-                "parent": results[0].parent_block,
-                "txType": results[0].tx_type,
-                "txTotal": results[0].tx_total,
-                "minerFees": results[0].fees,
-                "timestamp": results[0].timestamp/*,
-                *"filecontractids": results[0].filecontractids,
-                "filecontractmissedproofoutputids": results[0].filecontractrevisionmissedproofoutputids,
-                "filecontractrevisionmissedproofoutputids": results[0].filecontractrevisionmissedproofoutputids,
-                "filecontractrevisionvalidproofoutputids": results[0].filecontractrevisionvalidproofoutputids,
-                "siacoininputoutputs": results[0].siacoininputoutputs,
-                "siacoinoutputids": results[0].siacoinoutputids,
-                "siafundclaimoutputids": results[0].siafundclaimoutputids,
-                "siafundinputoutputs": results[0].siafundinputoutputs,
-                "siafundoutputids": results[0].siafundoutputids,
-                "storageproofoutputids": results[0].storageproofoutputids,
-                "storageproofoutputs": reuslts[0].storageproofoutputs*/
+            if (req.params.id.length == 64) { 
+                res.json({
+                    "height": results[0].block_height,
+                    "hash": results[0].tx_hash,
+                    "parent": results[0].parent_block,
+                    "txType": results[0].tx_type,
+                    "txTotal": results[0].tx_total,
+                    "minerFees": results[0].fees,
+                    "timestamp": results[0].timestamp/*,
+                    *"filecontractids": results[0].filecontractids,
+                    "filecontractmissedproofoutputids": results[0].filecontractrevisionmissedproofoutputids,
+                    "filecontractrevisionmissedproofoutputids": results[0].filecontractrevisionmissedproofoutputids,
+                    "filecontractrevisionvalidproofoutputids": results[0].filecontractrevisionvalidproofoutputids,
+                    "siacoininputoutputs": results[0].siacoininputoutputs,
+                    "siacoinoutputids": results[0].siacoinoutputids,
+                    "siafundclaimoutputids": results[0].siafundclaimoutputids,
+                    "siafundinputoutputs": results[0].siafundinputoutputs,
+                    "siafundoutputids": results[0].siafundoutputids,
+                    "storageproofoutputids": results[0].storageproofoutputids,
+                    "storageproofoutputs": reuslts[0].storageproofoutputs*/
 
-            });
+                });
+            } else {
+                res.send(results)
+            }
         })
 });
 
