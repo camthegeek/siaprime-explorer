@@ -1,4 +1,4 @@
-# siaprime-explorer
+# scprime-explorer
 
 Okay, here we go.
 
