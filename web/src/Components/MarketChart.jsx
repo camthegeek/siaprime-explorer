@@ -28,7 +28,7 @@ class MarketCharts extends Component {
         this.state = {
           series: [
                 {
-                    name: 'Bitcoin value',
+                    name: 'ScPrime value',
                     data: [],
                     type: 'line',
                 },
@@ -101,7 +101,7 @@ class MarketCharts extends Component {
             },
             yaxis: [
                 {
-                    seriesName: 'Bitcoin value',
+                    seriesName: 'ScPrime value',
                     show: false,
                     labels: {
                         formatter: (val, index) => {
@@ -226,7 +226,7 @@ class MarketCharts extends Component {
                 this.setState({
                     series: [
                         {
-                        name: 'Bitcoin value',
+                        name: 'ScPrime value',
                         data: cgBtcprice,
                         type: 'line'
                     },
@@ -326,7 +326,7 @@ class MarketCharts extends Component {
                 this.setState({
                     series: [
                         {
-                        name: 'Bitcoin value',
+                        name: 'ScPrime value',
                         data: cgBtcprice,
                         type: 'line'
                     },
@@ -395,7 +395,7 @@ class MarketCharts extends Component {
                 this.setState({
                     series: [
                         {
-                        name: 'Bitcoin value',
+                        name: 'ScPrime value',
                         data: cgBtcprice,
                         type: 'line'
                     },
@@ -464,7 +464,7 @@ class MarketCharts extends Component {
                 this.setState({
                     series: [
                         {
-                        name: 'Bitcoin value',
+                        name: 'ScPrime value',
                         data: cgBtcprice,
                         type: 'line'
                     },
@@ -534,7 +534,7 @@ class MarketCharts extends Component {
                 this.setState({
                     series: [
                         {
-                        name: 'Bitcoin value',
+                        name: 'ScPrime value',
                         data: cgBtcprice,
                         type: 'line'
                     },
@@ -604,7 +604,7 @@ class MarketCharts extends Component {
                 this.setState({
                     series: [
                         {
-                        name: 'Bitcoin value',
+                        name: 'ScPrime value',
                         data: cgBtcprice,
                         type: 'line'
                     },
