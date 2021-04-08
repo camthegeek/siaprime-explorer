@@ -63,7 +63,7 @@ class NetworkData extends Component {
                                             <Wallet2 className="float-left" size={32} />
                                         </div>
                                         <div className="media-body text-right float-right">
-                                            <h4 className="font-weight-bold">{this.props.data.netdata.btcValue}</h4> <span>Bitcoin Value</span>
+                                            <h4 className="font-weight-bold">{this.props.data.netdata.btcValue}</h4> <span>ScPrime Value</span>
                                         </div>
                                     </div>
                                 </div>
