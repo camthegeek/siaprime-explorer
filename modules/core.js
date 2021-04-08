@@ -23,35 +23,19 @@ const cors = require('cors'); // I added cors just in case it's ever needed.. bu
 function createBlockTable() {
     return knex.schema
         .createTable('blocks', function (table) {
-            table.integer('height').primary();   // block.height
-            table.string('hash', 64);   // block.blockid
-            table.decimal('difficulty', 30, 0); // block.difficulty
-            table.decimal('estimatedhashrate', 30, 0);  // block.estimatedhashrate
-            table.string('maturitytimestamp');  // block.maturitytimestamp
-            table.string('timestamp');  // block.rawblock.timestamp
-            table.string('parentid', 64);   // block.rawblock.parentid
-            table.decimal('totalcoins', 36, 0); // block.totalcoins
-            table.string('minerpayoutaddr', 76); // block.rawblock.minerpayouts[0].unlockhash
-            table.string('minerpayoutaddr2', 76); // block.rawblock.minerpayouts[1].unlockhash
-            table.integer('minerpayoutcount');   // block.minerpayoutcount
-            table.integer('transactioncount');   // block.transactioncount
-            table.integer('siacoininputcount');  // block.siacoininputcount
-            table.integer('siacoinoutputcount'); // block.siacoinoutputcount
-            table.integer('filecontractcount');  // block.filecontractcount
-            table.integer('filecontractrevisioncount');  // block.filecontractrevisioncount
-            table.integer('storageproofcount');  // block.storageproofcount
-            table.integer('siafundinputcount');  // block.siafundinputcount
-            table.integer('siafundoutputcount'); // block.siafundoutputcount
-            table.decimal('minerfeecount', 36, 0);  // block.minerfeecount
-            table.integer('arbitrarydatacount'); // block.arbitrarydatacount
-            table.integer('transactionsignaturecount');  // block.transactionsiganturecount
-            table.decimal('activecontractcost', 36, 0); // block.activecontractcost
-            table.integer('activecontractcount'); // block.activecontractcount
-            table.decimal('activecontractsize', 30, 0); // block.activecontractsize
-            table.decimal('totalcontractcost', 36, 0);  // block.totalcontractcost
-            table.decimal('totalcontractsize', 30, 0);  // block.totalcontractsize
-            table.string('totalrevisionvolume');    // block.totalrevisionvolume
-            table.string('minerarbitrarydata'); // too lazy to fill this in --cam 
+            table.integer('height').primary();          // height
+            table.string('id', 64);                     // blockid
+            table.string('parentid', 64);               // parentid
+            table.integer('nonce');                     // nonce
+            table.integer('target');                    // target
+            table.decimal('difficulty', 30, 0);         // difficulty
+            table.decimal('totalcoins', 38, 0);         // totalcoins
+            table.decimal('estimatedhashrate', 30, 0);  // estimatedhashrate
+            table.string('timestamp');                  // timestamp
+            table.string('merkleroot', 64);             // merkleroot
+            table.string('minerpayoutaddr', 76);        // minerpayouts[0].unlockhash
+            table.string('minerpayoutaddr2', 76);       // minerpayouts[1].unlockhash
+            table.string('minerarbitrarydata');         // minerarbitrarydata 
         })
         .createTable('transactions', function (tx) {
             tx.integer('block_height');  // block.height
@@ -231,7 +215,7 @@ function getBlockInfo(spd, blockNumber) { // begin to pull data for each blockNu
     return new Promise((resolve, reject) => { // this puppy returns a promise!
         let number = parseInt(blockNumber); // make sure blockNumber is an integer (number, no decimals)
         spd.call({ // connect to siaprime daemon
-            url: '/explorer/blocks/' + number, // at this url
+            url: '/consensus/blocks?height=' + number, // at this url
             method: 'GET' // make a get request
         })
             .then((rawblock) => { // with the data we get
@@ -273,83 +257,69 @@ async function getBlocks(spd, topHeight, startHeight) { // this function deserve
 async function parseWholeBlock(blockInfo, height) {
     return new Promise((resolve) => {
         console.log('- - - - - - - -  - - - - - -  - - - - - - - -')
-        console.log('processing starting on:', blockInfo.block.height);
-        let transactions = blockInfo.block.transactions; // store all the block transactions in 1 temp variable
+        console.log('processing starting on:', blockInfo.height);
+        let transactions = blockInfo.transactions; // store all the block transactions in 1 temp variable
         let minerarbitrarydata = ''
         for (a = 0; a < transactions.length; a++) {
-            if (transactions[a].rawtransaction.arbitrarydata.length > 0
-            && transactions[a].rawtransaction.filecontractrevisions.length == 0
-            && transactions[a].rawtransaction.filecontracts.length == 0
-            && transactions[a].rawtransaction.minerfees.length == 0
-            && transactions[a].rawtransaction.siacoininputs.length == 0
-            && transactions[a].rawtransaction.siacoinoutputs.length == 0
-            && transactions[a].rawtransaction.siafundinputs.length == 0
-            && transactions[a].rawtransaction.siafundoutputs.length == 0
-            && transactions[a].rawtransaction.storageproofs.length == 0
-            && transactions[a].rawtransaction.transactionsignatures.length == 0
+            if (transactions[a].arbitrarydata.length > 0
+            && transactions[a].filecontractrevisions.length == 0
+            && transactions[a].filecontracts.length == 0
+            && transactions[a].minerfees.length == 0
+            && transactions[a].siacoininputs.length == 0
+            && transactions[a].siacoinoutputs.length == 0
+            && transactions[a].siafundinputs.length == 0
+            && transactions[a].siafundoutputs.length == 0
+            && transactions[a].storageproofs.length == 0
+            && transactions[a].transactionsignatures.length == 0
             ) { // if arbitrary data has something && everything else blank
-                minerarbitrarydata = transactions[a].rawtransaction.arbitrarydata; // assume it's arbitrarydata submitted by miner
+                minerarbitrarydata = transactions[a].arbitrarydata; // assume it's arbitrarydata submitted by miner
             }
         }
-        addToBlocks(blockInfo.block.height,
-            blockInfo.block.blockid,
-            blockInfo.block.difficulty,
-            blockInfo.block.estimatedhashrate,
-            blockInfo.block.maturitytimestamp,
-            blockInfo.block.rawblock.timestamp,
-            blockInfo.block.rawblock.parentid,
-            blockInfo.block.totalcoins,
-            blockInfo.block.rawblock.minerpayouts[0].unlockhash,
-            blockInfo.block.rawblock.minerpayouts[1].unlockhash,
-            blockInfo.block.minerpayoutcount,
-            blockInfo.block.transactioncount,
-            blockInfo.block.siacoininputcount,
-            blockInfo.block.siacoinoutputcount,
-            blockInfo.block.filecontractcount,
-            blockInfo.block.filecontractrevisioncount,
-            blockInfo.block.storageproofcount,
-            blockInfo.block.siafundinputcount,
-            blockInfo.block.siafundoutputcount,
-            blockInfo.block.minerfeecount,
-            blockInfo.block.arbitrarydatacount,
-            blockInfo.block.transactionsignaturecount,
-            blockInfo.block.activecontractcost,
-            blockInfo.block.activecontractcount,
-            blockInfo.block.activecontractsize,
-            blockInfo.block.totalcontractcost,
-            blockInfo.block.totalcontractsize,
-            blockInfo.block.totalrevisionvolume,
+        addToBlocks(blockInfo.height,
+            blockInfo.id,
+            blockInfo.parentid,
+            blockInfo.nonce,
+            blockInfo.target,
+            blockInfo.difficulty,
+            blockInfo.totalcoins,
+            blockInfo.estimatedhashrate,
+            blockInfo.timestamp,
+            blockInfo.merkleroot,
+            blockInfo.minerpayouts[0].unlockhash,
+            blockInfo.minerpayouts[1].unlockhash,
             minerarbitrarydata)
+
             .then((added) => {
                 //console.log(' [BLOCK] Added to database on height: '+blockInfo.block.height);
-                processTransaction(transactions, blockInfo.block.rawblock.timestamp, blockInfo.block.rawblock.minerpayouts)
+                processTransaction(blockInfo, transactions, blockInfo.timestamp, blockInfo.minerpayouts)
                     .then((txadded) => {
                         //console.log(txadded);
-                        console.log('[TX]: Added all transactions for height:', blockInfo.block.height);
+                        console.log('[TX]: Added all transactions for height:', blockInfo.height);
                         resolve('true');
                     }).catch((err) => console.log(err))
             }).catch((err) => console.log(err)); // add to block sql
     })
 }
 
-async function processTransaction(transactions, timestamp, minerpayouts) { // appropriately named function.
+async function processTransaction(b, transactions, timestamp, minerpayouts) { // appropriately named function.
     let minerFees = 0; // set minerFees to zero
+    let height = b.height;
 
     for (t = 0; t < transactions.length; t++) { // for each transaction. . .
         let txType = ''; // allows us to use the txType variable anywhere in this function
-        console.log('[TX] Processing transactions on height:', transactions[t].height)
+        console.log('[TX] Processing transactions on height:', height)
         let txTotal = 0; // set the tx total sent to 0;
-        if (transactions[t].rawtransaction.minerfees != undefined) { // if the tx has miner fees..
-            let fee = Number(transactions[t].rawtransaction.minerfees); // make sure they're number not string
+        if (transactions[t].minerfees != undefined) { // if the tx has miner fees..
+            let fee = Number(transactions[t].minerfees); // make sure they're number not string
             minerFees += fee; // add them all together.
         }
-        if ((transactions[t].rawtransaction.minerfees).length === 0) { // if minerfees does not have anything in it
+        if ((transactions[t].minerfees).length === 0) { // if minerfees does not have anything in it
             minerFees = 0; // set fee to zero
         }
-        if ((transactions[t].rawtransaction.siacoininputs).length === 0 && transactions[t].height > 0) { // if siacoinputs is empty
+        if ((transactions[t].siacoininputs).length === 0 && height > 0) { // if siacoinputs is empty
                 txType = 'coinbase'; // assume it's a mined block with reward tx. block reward tx is 300 scp per block but goes down 0.001 per block
             if (transactions[t].height < 290000) { // so when we get to this height, there's a base of 10scp per block
-                txTotal = baseCoinbase - (transactions[t].height * 0.001); // until then, do the math right.
+                txTotal = baseCoinbase - (height * 0.001); // until then, do the math right.
             } else { // otherwise.. 
                 txTotal = 10; // set the reward to flat 10 scp
             }
@@ -372,33 +342,32 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 let addr = minerpayouts_merged[e].unlockhash;
                 let amt = minerpayouts_merged[e].total;
                 let txhash = transactions[t].id;
-                let txHeight = transactions[t].height;
-                addToAddress(addr, amt, txhash, 'in', txType, txHeight)
+                addToAddress(addr, amt, txhash, 'in', txType, height)
                     .then((done) => {
 
                     })
                     .catch((errors) => {
                         console.log(errors);
                     });
-                let totals3 = await calcTotals(addr, 'in', amt, txHeight, txhash, txType);
+                let totals3 = await calcTotals(addr, 'in', amt, height, txhash, txType);
             }
         } 
-        if (transactions[t].rawtransaction.siacoininputs) {
-            if (transactions[t].rawtransaction.siacoininputs.length != 0
-                    && transactions[t].rawtransaction.filecontracts.length == 0
-                    && transactions[t].rawtransaction.filecontractrevisions.length == 0
-                    && transactions[t].rawtransaction.storageproofs.length == 0
-                    && transactions[t].rawtransaction.siafundinputs.length == 0 
-                    && transactions[t].rawtransaction.siafundoutputs.length == 0) {
+        if (transactions[t].siacoininputs) {
+            if (transactions[t].siacoininputs.length != 0
+                    && transactions[t].filecontracts.length == 0
+                    && transactions[t].filecontractrevisions.length == 0
+                    && transactions[t].storageproofs.length == 0
+                    && transactions[t].siafundinputs.length == 0 
+                    && transactions[t].siafundoutputs.length == 0) {
                     txType = 'sctx'; // mark it as a sc transaction
             }
         }
-        if (transactions[t].rawtransaction.siafundinputs.length > 0 && transactions[t].siafundinputoutputs.length > 0) {
+        if (transactions[t].siafundinputs.length > 0 && transactions[t].siafundinputoutputs.length > 0) {
             console.log(transactions[t].id +' identified as a sf tx');
                  txType = 'sftx'; // mark it as a sf transaction
             }
-        if (transactions[t].rawtransaction.filecontracts) {
-            if (transactions[t].rawtransaction.filecontracts.length != 0) {
+        if (transactions[t].filecontracts) {
+            if (transactions[t].filecontracts.length != 0) {
                 console.log(transactions[t].id +' identified as a contract');
                 txType = 'contract';
             }
@@ -415,8 +384,8 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                     txType = 'storageproof';
             }
         }
-        for (tt = 0; tt < transactions[t].rawtransaction.siacoinoutputs.length; tt++) {  // for each siacoinoutput. . 
-            txTotal += transactions[t].rawtransaction.siacoinoutputs[tt].value / scprimecoinprecision; // lets save how much each tx had in it
+        for (tt = 0; tt < transactions[t].siacoinoutputs.length; tt++) {  // for each siacoinoutput. . 
+            txTotal += transactions[t].siacoinoutputs[tt].value / scprimecoinprecision; // lets save how much each tx had in it
         }
         if (txType == 'sctx') {
             /* cycle through addresses */
@@ -427,7 +396,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             // determining if tx is a host ann
             let hostAnnBool = false
             let decodedIp;
-            let arbData = transactions[t].rawtransaction.arbitrarydata
+            let arbData = transactions[t].arbitrarydata
             let hashSyn = []         
             let inputoutputsjson = transactions[t].siacoininputoutputs;
             let siacoininputoutputs = Object.values(inputoutputsjson.reduce((cam, { unlockhash, value }) => {
@@ -442,23 +411,22 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 let addr = siacoininputoutputs[q].unlockhash;
                 let amt = siacoininputoutputs[q].total;
                 let txhash = transactions[t].id;
-                let txHeight = transactions[t].height;
 
-                addToAddress(addr, '-' + amt, txhash, 'out', txType, txHeight)
+                addToAddress(addr, '-' + amt, txhash, 'out', txType, height)
                     .then((done) => {
                         // do something
                     })
                     .catch((errors) => {
                         console.log(errors);
                     });
-                let totals2 = await calcTotals(addr, 'out', amt, txHeight, txhash, txType);
+                let totals2 = await calcTotals(addr, 'out', amt, height, txhash, txType);
             }
             hashSyn.push(transactions[t].id)
             /*  we COULD technically use a function to do this so we're not copy/pasting code 3 times
                 but this block pretty much checks the json data for each address and sums up the total per address in the transaction.
                 we don't need EVERY SINGLE CHANGE stored in sql. Just the change per tx
             */
-            let siacoinoutputsjson = transactions[t].rawtransaction.siacoinoutputs;
+            let siacoinoutputsjson = transactions[t].siacoinoutputs;
             let siacoinoutputs = Object.values(siacoinoutputsjson.reduce((cam, { unlockhash, value }) => {
                 cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
                 if (unlockhash == cam[unlockhash].unlockhash) {
@@ -470,16 +438,15 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 let addr = siacoinoutputs[r].unlockhash;
                 let amt = siacoinoutputs[r].total;
                 let txhash = transactions[t].id;
-                let txHeight = transactions[t].height;
 
-                addToAddress(addr, amt, txhash, 'in', txType, txHeight)
+                addToAddress(addr, amt, txhash, 'in', txType, height)
                     .then((done) => {
 
                     })
                     .catch((errors) => {
                         console.log(errors);
                     });
-                let totals1 = await calcTotals(addr, 'in', amt, txHeight, txhash, txType);
+                let totals1 = await calcTotals(addr, 'in', amt, height, txhash, txType);
             }
             if (arbData.length > 0){
                 slice = arbData[0].slice(0,14)
@@ -495,11 +462,11 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             }
             if (hostAnnBool == true) {
                 // host_info
-                addToHost(transactions[t].id, hashSyn, transactions[t].height, timestamp, minerFees, decodedIp)
+                addToHost(transactions[t].id, hashSyn, height, timestamp, minerFees, decodedIp)
                 // transactions
-                let transacted = await addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees, timestamp)
+                let transacted = await addToTransactions(height, transactions[t].id, b.id, txType, txTotal, minerFees, timestamp)
             } else {
-            let transacted = await addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees, timestamp);
+            let transacted = await addToTransactions(height, transactions[t].id, b.id, txType, txTotal, minerFees, timestamp);
             }
         }
         if (txType == 'sftx') {
@@ -508,7 +475,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 let addr_spf_out = transactions[t].siafundinputoutputs[s].unlockhash;
                 let amt_spf_out = transactions[t].siafundinputoutputs[s].value;
                 let txhash_spf_out = transactions[t].id;
-                let txHeight_spf_out = transactions[t].height;
+                let txHeight_spf_out = height;
                 console.log('inserting values for spf stuff. addr: '+addr_spf_out+ ' with amt: '+amt_spf_out+' on height: '+txHeight_spf_out)
                 addToAddress(addr_spf_out, '-' + amt_spf_out, txhash_spf_out, 'out', txType, txHeight_spf_out)
                     .then((done) => {
@@ -519,12 +486,12 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                     });
                     let total_spf_out = await calcTotals(addr_spf_out, 'out', amt_spf_out, txHeight_spf_out, txhash_spf_out, txType);
             }
-            let sfoutputsjson = transactions[t].rawtransaction.siafundoutputs;
+            let sfoutputsjson = transactions[t].siafundoutputs;
             for (u = 0; u < sfoutputsjson.length; u++) {
                 let addr_spf = sfoutputsjson[u].unlockhash;
                 let amt_spf = sfoutputsjson[u].value;
                 let txhash_spf = transactions[t].id;
-                let txHeight_spf = transactions[t].height;
+                let txHeight_spf = height;
 
                 addToAddress(addr_spf, amt_spf, txhash_spf, 'in', txType, txHeight_spf)
                     .then((done) => {
@@ -536,16 +503,16 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 let totalspf_in = await calcTotals(addr_spf, 'in', amt_spf, txHeight_spf, txhash_spf, txType);
             }
 
-            let transacted = await addToTransactions(transactions[t].height, transactions[t].id, transactions[t].parent, txType, txTotal, minerFees, timestamp);
+            let transacted = await addToTransactions(height, transactions[t].id, b.id, txType, txTotal, minerFees, timestamp);
         }
         if (txType == 'contract'){
             let masterHash = transactions[t].id;
-            let txHeight = transactions[t].height;
-            let parent = transactions[t].parent;
-            let revisionNum = parseInt(transactions[t].rawtransaction.filecontracts[0].revisionnumber);
-            let windowStart = parseInt(transactions[t].rawtransaction.filecontracts[0].windowstart); // block that opens the window for submitting the storage proof
-            let windowEnd = parseInt(transactions[t].rawtransaction.filecontracts[0].windowend);
-            let fileSize = parseInt(transactions[t].rawtransaction.filecontracts[0].filesize); // contract size in current revision
+            let txHeight = height;
+            let parent = b.id;
+            let revisionNum = parseInt(transactions[t].filecontracts[0].revisionnumber);
+            let windowStart = parseInt(transactions[t].filecontracts[0].windowstart); // block that opens the window for submitting the storage proof
+            let windowEnd = parseInt(transactions[t].filecontracts[0].windowend);
+            let fileSize = parseInt(transactions[t].filecontracts[0].filesize); // contract size in current revision
             if (fileSize == 0) {
                 var renewBool = 0 // boolean to mark this contract as a renewal
             } else {
@@ -567,10 +534,10 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             let totalTransacted;
 
 
-            if (transactions[t].rawtransaction.siacoininputs.length >= 2) {
+            if (transactions[t].siacoininputs.length >= 2) {
                 var link = []
-                link[0] = transactions[t].rawtransaction.siacoininputs[0].parentid // renter tx
-                link[1] = transactions[t].rawtransaction.siacoininputs[1].parentid // host tx
+                link[0] = transactions[t].siacoininputs[0].parentid // renter tx
+                link[1] = transactions[t].siacoininputs[1].parentid // host tx
                 
                 for (q = 0; q < link.length; q++) { // for both links
                     let matchBool = false
@@ -608,7 +575,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                                     let contract_totals_out = await calcTotals(addr, 'out', amt, txHeight, masterHash, linkId);
                                 }
                                 // receivers
-                                let siacoinoutputsjson = transactions[m].rawtransaction.siacoinoutputs;
+                                let siacoinoutputsjson = transactions[m].siacoinoutputs;
                                 let siacoinoutputs = Object.values(siacoinoutputsjson.reduce((cam, { unlockhash, value }) => {
                                     cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
                                     if (unlockhash == cam[unlockhash].unlockhash) {
@@ -654,20 +621,20 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 totalTransacted = renterAllowanceValue + hostCollateralValue
 
                 // storage proof results
-                validProof1Value = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[0].value
-                validProof1Address = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[0].unlockhash
+                validProof1Value = transactions[t].filecontracts[0].validproofoutputs[0].value
+                validProof1Address = transactions[t].filecontracts[0].validproofoutputs[0].unlockhash
 
-                validProof2Value = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[1].value
-                validProof2Address = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[1].unlockhash
+                validProof2Value = transactions[t].filecontracts[0].validproofoutputs[1].value
+                validProof2Address = transactions[t].filecontracts[0].validproofoutputs[1].unlockhash
                 
-                missedProof1Value = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[0].value
-                missedProof1Address = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[0].unlockhash
+                missedProof1Value = transactions[t].filecontracts[0].missedproofoutputs[0].value
+                missedProof1Address = transactions[t].filecontracts[0].missedproofoutputs[0].unlockhash
 
-                missedProof2Value = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[1].value
-                missedProof2Address = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[1].unlockhash
+                missedProof2Value = transactions[t].filecontracts[0].missedproofoutputs[1].value
+                missedProof2Address = transactions[t].filecontracts[0].missedproofoutputs[1].unlockhash
 
-                missedProof3Value = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[2].value
-                missedProof3Address = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[2].unlockhash
+                missedProof3Value = transactions[t].filecontracts[0].missedproofoutputs[2].value
+                missedProof3Address = transactions[t].filecontracts[0].missedproofoutputs[2].unlockhash
 
                 // address_history changes
                 addToAddress(renterAllowanceSender, '-' + renterAllowanceValue, masterHash, 'out', txType, txHeight)
@@ -679,7 +646,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                         addToAddress(transactions[t].siacoinoutputs[i].unlockhash, transactions[t].siacoinoutputs[i].value, masterHash, 'out', txType, txHeight)
                     }
                 }
-            } else if (transactions[t].rawtransaction.siacoininputs.length == 1) {
+            } else if (transactions[t].siacoininputs.length == 1) {
                 allowancePostingHash = transactions[t].siacoininputoutputs[0].unlockhash
                 collateralPostingHash = "unknown"
                 renterAllowanceSender = transactions[t].siacoininputoutputs[0].unlockhash
@@ -690,20 +657,20 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 let linkId = "allowance"
 
                 // storageproof outputs
-                validProof1Value = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[0].value
-                validProof1Address = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[0].unlockhash
+                validProof1Value = transactions[t].filecontracts[0].validproofoutputs[0].value
+                validProof1Address = transactions[t].filecontracts[0].validproofoutputs[0].unlockhash
 
-                validProof2Value = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[1].value
-                validProof2Address = transactions[t].rawtransaction.filecontracts[0].validproofoutputs[1].unlockhash
+                validProof2Value = transactions[t].filecontracts[0].validproofoutputs[1].value
+                validProof2Address = transactions[t].filecontracts[0].validproofoutputs[1].unlockhash
                 
-                missedProof1Value = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[0].value
-                missedProof1Address = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[0].unlockhash
+                missedProof1Value = transactions[t].filecontracts[0].missedproofoutputs[0].value
+                missedProof1Address = transactions[t].filecontracts[0].missedproofoutputs[0].unlockhash
 
-                missedProof2Value = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[1].value
-                missedProof2Address = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[1].unlockhash
+                missedProof2Value = transactions[t].filecontracts[0].missedproofoutputs[1].value
+                missedProof2Address = transactions[t].filecontracts[0].missedproofoutputs[1].unlockhash
 
-                missedProof3Value = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[2].value
-                missedProof3Address = transactions[t].rawtransaction.filecontracts[0].missedproofoutputs[2].unlockhash
+                missedProof3Value = transactions[t].filecontracts[0].missedproofoutputs[2].value
+                missedProof3Address = transactions[t].filecontracts[0].missedproofoutputs[2].unlockhash
 
                 // address_history changes
                 addToAddress(renterAllowanceSender, '-' + renterAllowanceValue, masterHash, 'out', linkId, txHeight)
@@ -721,12 +688,12 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
         if (txType == 'revision'){
             let hashSyn;
             let totalTransacted;
-            let txHeight = transactions[t].height;
-            let parent = transactions[t].parent;
+            let txHeight = height;
+            let parent = b.id;
             let masterHash = transactions[t].id
-            let contradId = transactions[t].rawtransaction.filecontractrevisions[0].parentid
-            let newRevision = parseInt(transactions[t].rawtransaction.filecontractrevisions[0].newrevisionnumber)
-            let newFileSize = parseInt(transactions[t].rawtransaction.filecontractrevisions[0].newfilesize)
+            let contradId = transactions[t].filecontractrevisions[0].parentid
+            let newRevision = parseInt(transactions[t].filecontractrevisions[0].newrevisionnumber)
+            let newFileSize = parseInt(transactions[t].filecontractrevisions[0].newfilesize)
             let validProof1Value;
             let validProof1Address;
             let validProof2Value;
@@ -739,37 +706,37 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
             let missedProof3Address;
 
             // storageproof outputs
-            if (transactions[t].rawtransaction.filecontractrevisions[0].newmissedproofoutputs.length > 2 || newRevision >= 18446744073709551616) {
+            if (transactions[t].filecontractrevisions[0].newmissedproofoutputs.length > 2 || newRevision >= 18446744073709551616) {
                 if (newRevision >= 18446744073709551616) {
                     // If the revision number is Max Uint64, this is a "Renew and Clear" Revision style. This is a new format intriduced on 2020,
                     // and they don't include a MissedOutpu3 (burnt coins), as this contract is agreed between host and renter to be succeded, and
                     // will not even have an in-chain storage proof
-                    validProof1Value = transactions[t].rawtransaction.filecontractrevisions[0].newvalidproofoutputs[0].value
-                    validProof1Address = transactions[t].rawtransaction.filecontractrevisions[0].newvalidproofoutputs[0].unlockhash
-                    validProof2Value = transactions[t].rawtransaction.filecontractrevisions[0].newvalidproofoutputs[1].value
-                    validProof2Address = transactions[t].rawtransaction.filecontractrevisions[0].newvalidproofoutputs[1].unlockhash
-                    missedProof1Value = transactions[t].rawtransaction.filecontractrevisions[0].newmissedproofoutputs[0].value
-                    missedProof1Address = transactions[t].rawtransaction.filecontractrevisions[0].newmissedproofoutputs[0].unlockhash
-                    missedProof2Value = transactions[t].rawtransaction.filecontractrevisions[0].missedproofoutputs[1].value
-                    missedProof2Address = transactions[t].rawtransaction.filecontractrevisions[0].missedproofoutputs[1].unlockhash
+                    validProof1Value = transactions[t].filecontractrevisions[0].newvalidproofoutputs[0].value
+                    validProof1Address = transactions[t].filecontractrevisions[0].newvalidproofoutputs[0].unlockhash
+                    validProof2Value = transactions[t].filecontractrevisions[0].newvalidproofoutputs[1].value
+                    validProof2Address = transactions[t].filecontractrevisions[0].newvalidproofoutputs[1].unlockhash
+                    missedProof1Value = transactions[t].filecontractrevisions[0].newmissedproofoutputs[0].value
+                    missedProof1Address = transactions[t].filecontractrevisions[0].newmissedproofoutputs[0].unlockhash
+                    missedProof2Value = transactions[t].filecontractrevisions[0].missedproofoutputs[1].value
+                    missedProof2Address = transactions[t].filecontractrevisions[0].missedproofoutputs[1].unlockhash
                     missedProof3Value = 0
                     missedProof3Address = "(renew and clear revision)"
                 } else {
-                    validProof1Value = transactions[t].rawtransaction.filecontractrevisions[0].newvalidproofoutputs[0].value
-                    validProof1Address = transactions[t].rawtransaction.filecontractrevisions[0].newvalidproofoutputs[0].unlockhash
-                    validProof2Value = transactions[t].rawtransaction.filecontractrevisions[0].newvalidproofoutputs[1].value
-                    validProof2Address = transactions[t].rawtransaction.filecontractrevisions[0].newvalidproofoutputs[1].unlockhash
-                    missedProof1Value = transactions[t].rawtransaction.filecontractrevisions[0].newmissedproofoutputs[0].value
-                    missedProof1Address = transactions[t].rawtransaction.filecontractrevisions[0].newmissedproofoutputs[0].unlockhash
-                    missedProof2Value = transactions[t].rawtransaction.filecontractrevisions[0].missedproofoutputs[1].value
-                    missedProof2Address = transactions[t].rawtransaction.filecontractrevisions[0].missedproofoutputs[1].unlockhash
-                    missedProof3Value = transactions[t].rawtransaction.filecontractrevisions[0].newmissedproofoutputs[2].value
-                    missedProof3Address = transactions[t].rawtransaction.filecontractrevisions[0].newmissedproofoutputs[2].unlockhash
+                    validProof1Value = transactions[t].filecontractrevisions[0].newvalidproofoutputs[0].value
+                    validProof1Address = transactions[t].filecontractrevisions[0].newvalidproofoutputs[0].unlockhash
+                    validProof2Value = transactions[t].filecontractrevisions[0].newvalidproofoutputs[1].value
+                    validProof2Address = transactions[t].filecontractrevisions[0].newvalidproofoutputs[1].unlockhash
+                    missedProof1Value = transactions[t].filecontractrevisions[0].newmissedproofoutputs[0].value
+                    missedProof1Address = transactions[t].filecontractrevisions[0].newmissedproofoutputs[0].unlockhash
+                    missedProof2Value = transactions[t].filecontractrevisions[0].missedproofoutputs[1].value
+                    missedProof2Address = transactions[t].filecontractrevisions[0].missedproofoutputs[1].unlockhash
+                    missedProof3Value = transactions[t].filecontractrevisions[0].newmissedproofoutputs[2].value
+                    missedProof3Address = transactions[t].filecontractrevisions[0].newmissedproofoutputs[2].unlockhash
                 }
 
                 // finding linked tx (the sending tx)
                 let matchBool = false
-                if (transactions[t].rawtransaction.siacoininputs.length != 0) {
+                if (transactions[t].siacoininputs.length != 0) {
                     let match = transactions[t].siacoininputs[0].parentid
                     let addr = []
                     let amt = []
@@ -808,7 +775,7 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                 }
                 if (matchBool == false) {
                     hashSyn = ""
-                    if (transactions[t].rawtransaction.siacoininputs.length != 0) {
+                    if (transactions[t].siacoininputs.length != 0) {
                         let inputoutputsjson = transactions[m].siacoininputoutputs;
                         let siacoininputoutputs = Object.values(inputoutputsjson.reduce((cam, { unlockhash, value }) => {
                             cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
@@ -851,13 +818,13 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
         if (txType == 'storageproof'){
             let totalTransacted = 0
             let masterHash = transactions[t].id
-            let contractId = transactions[t].rawtransaction.storageproofs[0].parentid
+            let contractId = transactions[t].storageproofs[0].parentid
             let hashSyn = masterHash
-            let txHeight = transactions[t].height
+            let txHeight = height
 
             // finding linked tx (the sending tx)
-            if (transactions[t].rawtransaction.siacoininputs.length > 0) {
-                let match = transactions[t].rawtransaction.siacoininputs[0].parentid
+            if (transactions[t].siacoininputs.length > 0) {
+                let match = transactions[t].siacoininputs[0].parentid
                 for (m = 0; m < transactions.length; m++) {
                     if (transactions[m].siacoinoutputids != null) {
                         if (match == transactions[m].siacoinoutputids[0]) {
@@ -890,8 +857,8 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
                             }
 
                             // receiver: only 2nd output (wallet return), as first are miner Fees
-                            let addr = eTx.rawtransaction.siacoinoutputs[1].unlockhash
-                            let amt = parseInt(eTx.rawtransaction.siacoinoutputs[1].value)
+                            let addr = eTx.siacoinoutputs[1].unlockhash
+                            let amt = parseInt(eTx.siacoinoutputs[1].value)
                             totalTransacted = minerFees + amt
                             addToAddress(addr, amt, masterHash, 'in', txType, txHeight)
                                 .then((done) => {
@@ -1288,44 +1255,23 @@ async function processTransaction(transactions, timestamp, minerpayouts) { // ap
     }
 }
 
-async function addToBlocks(height, hash, difficulty, estimatedhashrate,
-    maturitytimestamp, timestamp, parentid,
-    totalcoins, minerpayoutaddr, minerpayoutaddr2, minerpayoutcount, transactioncount, siacoininputcount,
-    siacoinoutputcount, filecontractcount, filecontractrevisioncount, storageproofcount,
-    siafundinputcount, siafundoutputcount, minerfeecount, arbitrarydatacount,
-    transactionsignaturecount, activecontractcost, activecontractcount, activecontractsize,
-    totalcontractcost, totalcontractsize, totalrevisionvolume, minerarbitrarydata) { // appropriately named function
+async function addToBlocks(height, id, parentid, nonce, target, difficulty, totalcoins, estimatedhashrate,
+    timestamp, merkleroot, minerpayoutaddr, minerpayoutaddr2, minerarbitrarydata) { // appropriately named function
     //console.log('attempting to add ' + height + ' to database');
     return new Promise((resolve) => {
         return knex('blocks').insert({
             height: height,
-            hash: hash,
-            difficulty: difficulty,
-            estimatedhashrate: estimatedhashrate,
-            maturitytimestamp: maturitytimestamp,
-            timestamp: timestamp,
+            id: id,
             parentid: parentid,
+            nonce: nonce,
+            target: target,
+            difficulty: difficulty,
             totalcoins: totalcoins,
+            estimatedhashrate: estimatedhashrate,
+            timestamp: timestamp,
+            merkleroot: merkleroot,
             minerpayoutaddr: minerpayoutaddr,
             minerpayoutaddr2: minerpayoutaddr2,
-            minerpayoutcount: minerpayoutcount,
-            transactioncount: transactioncount,
-            siacoininputcount: siacoininputcount,
-            siacoinoutputcount: siacoinoutputcount,
-            filecontractcount: filecontractcount,
-            filecontractrevisioncount: filecontractrevisioncount,
-            storageproofcount: storageproofcount,
-            siafundinputcount: siafundinputcount,
-            siafundoutputcount: siafundoutputcount,
-            minerfeecount: minerfeecount,
-            arbitrarydatacount: arbitrarydatacount,
-            transactionsignaturecount: transactionsignaturecount,
-            activecontractcost: activecontractcost,
-            activecontractcount: activecontractcount,
-            activecontractsize: activecontractsize,
-            totalcontractcost: totalcontractcost,
-            totalcontractsize: totalcontractsize,
-            totalrevisionvolume: totalrevisionvolume,
             minerarbitrarydata: minerarbitrarydata
         })
             .then((res) => {
