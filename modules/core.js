@@ -26,8 +26,8 @@ function createBlockTable() {
             table.integer('height').primary();          // height
             table.string('id', 64);                     // blockid
             table.string('parentid', 64);               // parentid
-            table.integer('nonce');                     // nonce
-            table.integer('target');                    // target
+            table.string('nonce');                      // nonce
+            table.string('target');                     // target
             table.decimal('difficulty', 30, 0);         // difficulty
             table.decimal('totalcoins', 38, 0);         // totalcoins
             table.decimal('estimatedhashrate', 30, 0);  // estimatedhashrate
@@ -38,29 +38,18 @@ function createBlockTable() {
             table.string('minerarbitrarydata');         // minerarbitrarydata 
         })
         .createTable('transactions', function (tx) {
-            tx.integer('block_height');  // block.height
-            tx.string('tx_hash', 64).primary();   // block.transactions.id
-            tx.string('parent_block', 64); // block.trasactions.parent
+            tx.integer('height');                       // height
+            tx.string('tx_id', 64).primary();           // transactions.id
+            tx.string('parent_block', 64);              // parentid
             tx.string('tx_type', 16);
-            tx.string('tx_total');  // block.transactions.rawtransaction.siacoinoutputs
-            tx.decimal('fees', 36, 0);
-            tx.string('timestamp'); // block.rawblock.timestamp
-            /*tx.string('filecontractids');  // block.transactions.filecontractids
-            tx.string('filecontractmissedproofoutputids');  // block.transactions.filecontractmissedproofoutputids
-            tx.string('filecontractrevisionmissedproofoutputids');  // block.transactions.filecontractrevisionmissedproofoutputids
-            tx.string('filecontractrevisionvalidproofoutputids');   // block.transactions.filecontractrevisionvalidproofoutputids
-            tx.string('siacoininputoutputs');   // block.transactions.siacoininputoutputs
-            tx.string('siacoinoutputids');  // block.transactions.siacoinoutputids
-            tx.string('siafundclaimoutputids'); // block.transactions.siafundclaimoutputids
-            tx.string('siafundinputoutputs');   // block.transactions.siafundinputoutputs
-            tx.string('siafundoutputids');  // block.transactions.siafundoutputids
-            tx.string('storageproofoutputids'); // block.transactions.storageproofoutputids
-            tx.string('storageproofoutputs');   // block.transactions.storageproofoutputs*/
+            tx.string('tx_total');                      // transactions.siacoinoutputs
+            tx.decimal('fees', 36, 0);                  // transactions.minerfees
+            tx.string('timestamp');                     // timestamp
         })
         .createTable('address_history', function (addr) {
             addr.string('address', 76);
             addr.decimal('amount', null);
-            addr.string('tx_hash', 64);
+            addr.string('tx_id', 64);
             addr.string('direction', 4);
             addr.string('type', 16);
             addr.integer('height');
@@ -74,7 +63,7 @@ function createBlockTable() {
             totals.string('last_seen', 12);
         })
         .createTable('host_info', function(hai){
-            hai.string('tx_hash', 64).primary();
+            hai.string('tx_id', 64).primary();
             hai.string('hash_syn');
             hai.integer('height');
             hai.bigInteger('timestamp');
@@ -83,7 +72,7 @@ function createBlockTable() {
             hai.index(['height'], 'IX_hai');
         })
         .createTable('contracts', function(ci){
-            ci.string('master_hash', 64).primary();
+            ci.string('master_id', 64).primary();
             ci.string('contract_id', 64);
             ci.string('allowance_addr', 76);
             ci.decimal('renter_value', 36, 0);
@@ -114,7 +103,7 @@ function createBlockTable() {
             ci.index(['window_end'], 'IX_ci2');
         })
         .createTable('resolutions', function(cr){
-            cr.string('master_hash', 64).primary();
+            cr.string('master_id', 64).primary();
             cr.string('contract_id', 64);
             cr.decimal('fees', 36, 0);
             cr.string('result', 15);
@@ -130,7 +119,7 @@ function createBlockTable() {
             cr.index(['contract_id'], 'IX_cr1');
         })
         .createTable('revisions', function(rv){
-            rv.string('master_hash', 64).primary();
+            rv.string('master_id', 64).primary();
             rv.string('contract_id', 64);
             rv.decimal('fees', 36, 0);
             rv.integer('new_revision_num');
@@ -152,7 +141,7 @@ function createBlockTable() {
             rv.index(['contract_id'], 'IX_rv1');
         })
         .createTable('storageproofs', function(sp){
-            sp.string('master_hash', 64).primary();
+            sp.string('master_id', 64).primary();
             sp.string('contract_id', 64);
             sp.string('hash_syn');
             sp.integer('height');
