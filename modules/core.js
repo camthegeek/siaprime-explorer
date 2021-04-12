@@ -387,28 +387,30 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
             let decodedIp;
             let arbData = transactions[t].arbitrarydata
             let hashSyn = []         
-            let inputoutputsjson = transactions[t].siacoininputoutputs;
-            let siacoininputoutputs = Object.values(inputoutputsjson.reduce((cam, { unlockhash, value }) => {
-                cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
-                if (unlockhash == cam[unlockhash].unlockhash) {
-                    cam[unlockhash].total += parseInt(value);
-                }
-                return cam;
-            }, {}));
-            for (q = 0; q < siacoininputoutputs.length; q++) {
-                /* send each sender to addresses table with amount */
-                let addr = siacoininputoutputs[q].unlockhash;
-                let amt = siacoininputoutputs[q].total;
-                let txhash = transactions[t].id;
+            let siacoininputoutputs;
+            if (transactions[t].siacoininputoutputs) {
+                siacoininputoutputs = Object.values(inputoutputsjson.reduce((cam, { unlockhash, value }) => {
+                    cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
+                    if (unlockhash == cam[unlockhash].unlockhash) {
+                        cam[unlockhash].total += parseInt(value);
+                    }
+                    return cam;
+                }, {}));
+                for (q = 0; q < siacoininputoutputs.length; q++) {
+                    /* send each sender to addresses table with amount */
+                    let addr = siacoininputoutputs[q].unlockhash;
+                    let amt = siacoininputoutputs[q].total;
+                    let txhash = transactions[t].id;
 
-                addToAddress(addr, '-' + amt, txhash, 'out', txType, height)
-                    .then((done) => {
-                        // do something
-                    })
-                    .catch((errors) => {
-                        console.log(errors);
-                    });
-                let totals2 = await calcTotals(addr, 'out', amt, height, txhash, txType);
+                    addToAddress(addr, '-' + amt, txhash, 'out', txType, height)
+                        .then((done) => {
+                            // do something
+                        })
+                        .catch((errors) => {
+                            console.log(errors);
+                        });
+                    let totals2 = await calcTotals(addr, 'out', amt, height, txhash, txType);
+                }
             }
             hashSyn.push(transactions[t].id)
             /*  we COULD technically use a function to do this so we're not copy/pasting code 3 times
