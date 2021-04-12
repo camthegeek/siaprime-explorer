@@ -1039,7 +1039,7 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
                     })
                 } else { 
             knex('transactions').insert({
-                block_height: height,
+                height: height,
                 tx_id: hash,
                 parent_block: parent,
                 tx_type: type,
