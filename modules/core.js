@@ -872,7 +872,7 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
     async function addToHost(masterHash, hashSyn, txHeight, timestamp, minerFees, decodedIp) {
         return new Promise((resolve) => {
             knex('host_info').insert({
-                tx_hash: masterHash,
+                tx_id: masterHash,
                 hash_syn: hashSyn,
                 height: txHeight,
                 timestamp: timestamp,
@@ -1022,12 +1022,12 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
         return new Promise((resolve) => {
             knex('transactions')
             .select('*')
-            .where('tx_hash', hash)
+            .where('tx_id', hash)
             .then((success) => {
                 if (success.length != 0) {
                     console.log('Updating ['+type.toUpperCase()+'] with hash of '+hash);
                     knex('transactions')
-                    .where('tx_hash', hash)
+                    .where('tx_id', hash)
                     .update({
                         tx_type: type
                     })
@@ -1040,7 +1040,7 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
                 } else { 
             knex('transactions').insert({
                 block_height: height,
-                tx_hash: hash,
+                tx_id: hash,
                 parent_block: parent,
                 tx_type: type,
                 tx_total: total,
@@ -1065,7 +1065,7 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
             knex('address_history').insert({
                 address: address,
                 amount: amount,
-                tx_hash: tx_hash,
+                tx_id: tx_hash,
                 direction: direction,
                 type: type,
                 height: height
