@@ -62,7 +62,7 @@ function createBlockTable() {
             totals.string('first_seen', 12);
             totals.string('last_seen', 12);
         })
-        .createTable('host_info', function(hai){
+        .createTable('host_info', function (hai) {
             hai.string('tx_id', 64).primary();
             hai.string('hash_syn');
             hai.integer('height');
@@ -71,7 +71,7 @@ function createBlockTable() {
             hai.string('ip');
             hai.index(['height'], 'IX_hai');
         })
-        .createTable('contracts', function(ci){
+        .createTable('contracts', function (ci) {
             ci.string('master_id', 64).primary();
             ci.string('contract_id', 64);
             ci.string('allowance_addr', 76);
@@ -102,7 +102,7 @@ function createBlockTable() {
             ci.index(['contract_id'], 'IX_ci1');
             ci.index(['window_end'], 'IX_ci2');
         })
-        .createTable('resolutions', function(cr){
+        .createTable('resolutions', function (cr) {
             cr.string('master_id', 64).primary();
             cr.string('contract_id', 64);
             cr.decimal('fees', 36, 0);
@@ -118,7 +118,7 @@ function createBlockTable() {
             cr.index(['height'], 'IX_cr');
             cr.index(['contract_id'], 'IX_cr1');
         })
-        .createTable('revisions', function(rv){
+        .createTable('revisions', function (rv) {
             rv.string('master_id', 64).primary();
             rv.string('contract_id', 64);
             rv.decimal('fees', 36, 0);
@@ -140,7 +140,7 @@ function createBlockTable() {
             rv.index(['height'], 'IX_rv');
             rv.index(['contract_id'], 'IX_rv1');
         })
-        .createTable('storageproofs', function(sp){
+        .createTable('storageproofs', function (sp) {
             sp.string('master_id', 64).primary();
             sp.string('contract_id', 64);
             sp.string('hash_syn');
@@ -182,13 +182,13 @@ function startSync(startHeight) { // start synchronizing blocks from startHeight
                     //var topHeight = 100; // purely for testing
                     var topHeight = consensus.height; // we want to know the current height of the blockchain
                     //console.log('startHeight:', startHeight);
-                   // console.log('topHeight:', topHeight);
+                    // console.log('topHeight:', topHeight);
                     if ((startHeight) == topHeight) { // if our startheight (minus one, because we counted all the rows and found ourselves 1 ahead of the blockchain), is equal to consensus height
-                        console.log('['+new Date().toLocaleString()+'] heights are the same, taking a break');
+                        console.log('[' + new Date().toLocaleString() + '] heights are the same, taking a break');
                         setTimeout(startUp, 60000); // run startUp once if heights ~1 block difference or even. startUp loops back around to startSync..
                         //return; // lets not do a damn thing at all.
                     } else {
-                        getBlocks(spd, topHeight, Number(startHeight)+1); // lets start processing the blocks starting at startHeight until we reach topHeight
+                        getBlocks(spd, topHeight, Number(startHeight) + 1); // lets start processing the blocks starting at startHeight until we reach topHeight
                     }
                 })
                 .catch((error) => {  // if there's an error. . . 
@@ -227,7 +227,7 @@ async function getBlocks(spd, topHeight, startHeight) { // this function deserve
                     if (ready == true) {
                         ready = false;
                         const blockInfo = await getBlockInfo(spd, blockNumber);
-                        if (blockInfo != "error") { 
+                        if (blockInfo != "error") {
                             const parsed = await parseWholeBlock(blockInfo, blockNumber);
                             blockNumber++
                             ready = true;
@@ -251,15 +251,15 @@ async function parseWholeBlock(blockInfo, height) {
         let minerarbitrarydata = ''
         for (a = 0; a < transactions.length; a++) {
             if (transactions[a].arbitrarydata.length > 0
-            && transactions[a].filecontractrevisions.length == 0
-            && transactions[a].filecontracts.length == 0
-            && transactions[a].minerfees.length == 0
-            && transactions[a].siacoininputs.length == 0
-            && transactions[a].siacoinoutputs.length == 0
-            && transactions[a].siafundinputs.length == 0
-            && transactions[a].siafundoutputs.length == 0
-            && transactions[a].storageproofs.length == 0
-            && transactions[a].transactionsignatures.length == 0
+                && transactions[a].filecontractrevisions.length == 0
+                && transactions[a].filecontracts.length == 0
+                && transactions[a].minerfees.length == 0
+                && transactions[a].siacoininputs.length == 0
+                && transactions[a].siacoinoutputs.length == 0
+                && transactions[a].siafundinputs.length == 0
+                && transactions[a].siafundoutputs.length == 0
+                && transactions[a].storageproofs.length == 0
+                && transactions[a].transactionsignatures.length == 0
             ) { // if arbitrary data has something && everything else blank
                 minerarbitrarydata = transactions[a].arbitrarydata; // assume it's arbitrarydata submitted by miner
             }
@@ -306,7 +306,7 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
             minerFees = 0; // set fee to zero
         }
         if ((transactions[t].siacoininputs).length === 0 && height > 0) { // if siacoinputs is empty
-                txType = 'coinbase'; // assume it's a mined block with reward tx. block reward tx is 300 scp per block but goes down 0.001 per block
+            txType = 'coinbase'; // assume it's a mined block with reward tx. block reward tx is 300 scp per block but goes down 0.001 per block
             if (transactions[t].height < 290000) { // so when we get to this height, there's a base of 10scp per block
                 txTotal = baseCoinbase - (height * 0.001); // until then, do the math right.
             } else { // otherwise.. 
@@ -340,37 +340,37 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
                     });
                 let totals3 = await calcTotals(addr, 'in', amt, height, txhash, txType);
             }
-        } 
+        }
         if (transactions[t].siacoininputs) {
             if (transactions[t].siacoininputs.length != 0
-                    && transactions[t].filecontracts.length == 0
-                    && transactions[t].filecontractrevisions.length == 0
-                    && transactions[t].storageproofs.length == 0
-                    && transactions[t].siafundinputs.length == 0 
-                    && transactions[t].siafundoutputs.length == 0) {
-                    txType = 'sctx'; // mark it as a sc transaction
+                && transactions[t].filecontracts.length == 0
+                && transactions[t].filecontractrevisions.length == 0
+                && transactions[t].storageproofs.length == 0
+                && transactions[t].siafundinputs.length == 0
+                && transactions[t].siafundoutputs.length == 0) {
+                txType = 'sctx'; // mark it as a sc transaction
             }
         }
         if (transactions[t].siafundinputs.length > 0 && transactions[t].siafundinputoutputs.length > 0) {
-            console.log(transactions[t].id +' identified as a sf tx');
-                 txType = 'sftx'; // mark it as a sf transaction
-            }
+            console.log(transactions[t].id + ' identified as a sf tx');
+            txType = 'sftx'; // mark it as a sf transaction
+        }
         if (transactions[t].filecontracts) {
             if (transactions[t].filecontracts.length != 0) {
-                console.log(transactions[t].id +' identified as a contract');
+                console.log(transactions[t].id + ' identified as a contract');
                 txType = 'contract';
             }
         }
         if (transactions[t].filecontractrevisions) {
             if (transactions[t].filecontractrevisions.length != 0) {
-                console.log(transactions[t].id +' identified as a revision');
+                console.log(transactions[t].id + ' identified as a revision');
                 txType = 'revision';
             }
         }
-        if (transactions[t].storageproofs) {         
+        if (transactions[t].storageproofs) {
             if (transactions[t].storageproofs.length != 0) {
-                console.log(transactions[t].id +' identified as a storage proof');
-                    txType = 'storageproof';
+                console.log(transactions[t].id + ' identified as a storage proof');
+                txType = 'storageproof';
             }
         }
         for (tt = 0; tt < transactions[t].siacoinoutputs.length; tt++) {  // for each siacoinoutput. . 
@@ -386,7 +386,7 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
             let hostAnnBool = false
             let decodedIp;
             let arbData = transactions[t].arbitrarydata
-            let hashSyn = []         
+            let hashSyn = []
             let siacoininputoutputs;
             if (transactions[t].siacoininputoutputs) {
                 siacoininputoutputs = Object.values(inputoutputsjson.reduce((cam, { unlockhash, value }) => {
@@ -439,15 +439,15 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
                     });
                 let totals1 = await calcTotals(addr, 'in', amt, height, txhash, txType);
             }
-            if (arbData.length > 0){
-                slice = arbData[0].slice(0,14)
+            if (arbData.length > 0) {
+                slice = arbData[0].slice(0, 14)
                 if (slice == "SG9zdEFubm91bm") {
                     hostAnnBool = true
                     txType = 'hostann'
 
                     hostIp = arbData[0].slice(32)
                     let s = hostIp.search("AAAAAAAAAA")
-                    hostIp = hostIp.slice(0, (s-9))
+                    hostIp = hostIp.slice(0, (s - 9))
                     decodedIp = Buffer.from(hostIp, 'base64').toString('ascii')
                 }
             }
@@ -457,17 +457,17 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
                 // transactions
                 let transacted = await addToTransactions(height, transactions[t].id, b.id, txType, txTotal, minerFees, timestamp)
             } else {
-            let transacted = await addToTransactions(height, transactions[t].id, b.id, txType, txTotal, minerFees, timestamp);
+                let transacted = await addToTransactions(height, transactions[t].id, b.id, txType, txTotal, minerFees, timestamp);
             }
         }
         if (txType == 'sftx') {
-            console.log('processing sf stuff on ',transactions[t].id);
-            for (s = 0; s < transactions[t].siafundinputoutputs.length; s++){
+            console.log('processing sf stuff on ', transactions[t].id);
+            for (s = 0; s < transactions[t].siafundinputoutputs.length; s++) {
                 let addr_spf_out = transactions[t].siafundinputoutputs[s].unlockhash;
                 let amt_spf_out = transactions[t].siafundinputoutputs[s].value;
                 let txhash_spf_out = transactions[t].id;
                 let txHeight_spf_out = height;
-                console.log('inserting values for spf stuff. addr: '+addr_spf_out+ ' with amt: '+amt_spf_out+' on height: '+txHeight_spf_out)
+                console.log('inserting values for spf stuff. addr: ' + addr_spf_out + ' with amt: ' + amt_spf_out + ' on height: ' + txHeight_spf_out)
                 addToAddress(addr_spf_out, '-' + amt_spf_out, txhash_spf_out, 'out', txType, txHeight_spf_out)
                     .then((done) => {
                         // do something
@@ -475,7 +475,7 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
                     .catch((errors) => {
                         console.log(errors);
                     });
-                    let total_spf_out = await calcTotals(addr_spf_out, 'out', amt_spf_out, txHeight_spf_out, txhash_spf_out, txType);
+                let total_spf_out = await calcTotals(addr_spf_out, 'out', amt_spf_out, txHeight_spf_out, txhash_spf_out, txType);
             }
             let sfoutputsjson = transactions[t].siafundoutputs;
             for (u = 0; u < sfoutputsjson.length; u++) {
@@ -509,13 +509,13 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
             } else {
                 var renewBool = 1
             }
-            let contractId = transactions[t].filecontractids[0]
+            let contractId = transactions[t].filecontracts[0].id;
             let allowancePostingHash;
             let collateralPostingHash;
             let validProof1Value;
             let validProof1Address;
             let validProof2Value;
-            let validProof2Address;        
+            let validProof2Address;
             let missedProof1Value;
             let missedProof1Address;
             let missedProof2Value;
@@ -529,86 +529,98 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
                 var link = []
                 link[0] = transactions[t].siacoininputs[0].parentid // renter tx
                 link[1] = transactions[t].siacoininputs[1].parentid // host tx
-                
+
                 for (q = 0; q < link.length; q++) { // for both links
                     let matchBool = false
                     for (m = 0; m < transactions.length; m++) { // iterate on each tx 
-                        if (transactions[m].siacoinoutputids != null) { // avoid errors as some txs dont have siacoin outputs
-                            if (link[q] == transactions[m].siacoinoutputids[0]) {
-                                matchBool = true // found matching tx
-                                let linkId = ""
-                                if (q == 0) {
-                                    linkId = "allowance" // renter
-                                } else {
-                                    linkId = "collateral" // host
-                                }
-                                // senders
-                                let inputoutputsjson = transactions[m].siacoininputoutputs;
-                                let siacoininputoutputs = Object.values(inputoutputsjson.reduce((cam, { unlockhash, value }) => {
-                                    cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
-                                    if (unlockhash == cam[unlockhash].unlockhash) {
-                                        cam[unlockhash].total += parseInt(value);
-                                    }
-                                    return cam;
-                                }, {}));
-                                for (z = 0; z < siacoininputoutputs.length; z++) {
-                                    /* send each sender to addresses table with amount */
-                                    let addr = siacoininputoutputs[z].unlockhash;
-                                    let amt = siacoininputoutputs[z].total;
-                    
-                                    addToAddress(addr, '-' + amt, masterHash, 'out', linkId, txHeight)
-                                        .then((done) => {
-                                            // do something
-                                        })
-                                        .catch((errors) => {
-                                            console.log(errors);
-                                        });
-                                    let contract_totals_out = await calcTotals(addr, 'out', amt, txHeight, masterHash, linkId);
-                                }
-                                // receivers
-                                let siacoinoutputsjson = transactions[m].siacoinoutputs;
-                                let siacoinoutputs = Object.values(siacoinoutputsjson.reduce((cam, { unlockhash, value }) => {
-                                    cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
-                                    if (unlockhash == cam[unlockhash].unlockhash) {
-                                        cam[unlockhash].total += parseInt(value);
-                                    }
-                                    return cam;
-                                }, {}));
-                                for (r = 0; r < siacoinoutputs.length; r++) {
-                                    let addr = siacoinoutputs[r].unlockhash;
-                                    let amt = siacoinoutputs[r].total;
-                                    if (r == 0) {
-                                        linkId = txType
-                                    }
+                        if (transactions[m].siacoinoutputs.length >= 1) {
+                            for (j = 0; j < transactions[m].siacoinoutputs.length; j++) {
 
-                                    addToAddress(addr, amt, masterHash, 'in', linkId, txHeight)
-                                        .then((done) => {
 
-                                        })
-                                        .catch((errors) => {
-                                            console.log(errors);
-                                        });
-                                    let contract_totals_in = await calcTotals(addr, 'in', amt, txHeight, masterHash, linkId);
+                                if (transactions[m].siacoinoutputs[j].id != null) { // avoid errors as some txs dont have siacoin outputs
+
+                                    if (link[q] == transactions[m].siacoinoutputs[j].id) {
+                                        matchBool = true // found matching tx
+                                        let linkId = ""
+                                        if (q == 0) {
+                                            linkId = "allowance" // renter
+                                            renterAllowanceValue = parseInt(transactions[m].siacoinoutputs[j].value)
+                                            renterAllowanceSender = transactions[m].siacoinoutputs[j].unlockhash
+                                        } else {
+                                            linkId = "collateral" // host
+                                            hostCollateralValue = parseInt(transactions[m].siacoinoutputs[j].value)
+                                            hostCollateralSender = transactions[m].siacoinoutputs[j].unlockhash
+                                        }
+
+
+
+                                        // senders
+                                        let inputoutputsjson = transactions[m].siacoininputoutputs;
+                                        let siacoininputoutputs = Object.values(inputoutputsjson.reduce((cam, { unlockhash, value }) => {
+                                            cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
+                                            if (unlockhash == cam[unlockhash].unlockhash) {
+                                                cam[unlockhash].total += parseInt(value);
+                                            }
+                                            return cam;
+                                        }, {}));
+                                        for (z = 0; z < siacoininputoutputs.length; z++) {
+                                            /* send each sender to addresses table with amount */
+                                            let addr = siacoininputoutputs[z].unlockhash;
+                                            let amt = siacoininputoutputs[z].total;
+
+                                            addToAddress(addr, '-' + amt, masterHash, 'out', linkId, txHeight)
+                                                .then((done) => {
+                                                    // do something
+                                                })
+                                                .catch((errors) => {
+                                                    console.log(errors);
+                                                });
+                                            let contract_totals_out = await calcTotals(addr, 'out', amt, txHeight, masterHash, linkId);
+                                        }
+
+                                        // receivers
+                                        let siacoinoutputsjson = transactions[m].siacoinoutputs;
+                                        let siacoinoutputs = Object.values(siacoinoutputsjson.reduce((cam, { unlockhash, value }) => {
+                                            cam[unlockhash] = cam[unlockhash] || { unlockhash, total: 0 };
+                                            if (unlockhash == cam[unlockhash].unlockhash) {
+                                                cam[unlockhash].total += parseInt(value);
+                                            }
+                                            return cam;
+                                        }, {}));
+                                        for (r = 0; r < siacoinoutputs.length; r++) {
+                                            let addr = siacoinoutputs[r].unlockhash;
+                                            let amt = siacoinoutputs[r].total;
+                                            if (r == 0) {
+                                                linkId = txType
+                                            }
+
+                                            addToAddress(addr, amt, masterHash, 'in', linkId, txHeight)
+                                                .then((done) => {
+
+                                                })
+                                                .catch((errors) => {
+                                                    console.log(errors);
+                                                });
+                                            let contract_totals_in = await calcTotals(addr, 'in', amt, txHeight, masterHash, linkId);
+                                        }
+                                    }
                                 }
                             }
+                            // this area needs work/verified
+                            /*if (matchBool == false) {
+                                if (transactions[t].siacoininputoutputs[0]) { 
+                                    allowancePostingHash = transactions[t].siacoininputoutputs[0].unlockhash;
+                                }
+                                if (transactions[t].siacoininputoutputs[1]) {
+                                    collateralPostingHash = transactions[t].siacoininputoutputs[1].unlockhash;
+                                }
+        
+                            }*/
                         }
-                    }
-                    if (matchBool == false) {
-                        if (transactions[t].siacoininputoutputs[0]) { 
-                            allowancePostingHash = transactions[t].siacoininputoutputs[0].unlockhash;
-                        }
-                        if (transactions[t].siacoininputoutputs[1]) {
-                            collateralPostingHash = transactions[t].siacoininputoutputs[1].unlockhash;
-                        }
-
                     }
                 }
 
-                renterAllowanceValue = parseInt(transactions[t].siacoininputoutputs[0].value)
-                renterAllowanceSender = transactions[t].siacoininputoutputs[0].unlockhash
 
-                hostCollateralValue = parseInt(transactions[t].siacoininputoutputs[1].value)
-                hostCollateralSender = transactions[t].siacoininputoutputs[1].unlockhash
                 totalTransacted = renterAllowanceValue + hostCollateralValue
 
                 // storage proof results
@@ -617,7 +629,7 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
 
                 validProof2Value = transactions[t].filecontracts[0].validproofoutputs[1].value
                 validProof2Address = transactions[t].filecontracts[0].validproofoutputs[1].unlockhash
-                
+
                 missedProof1Value = transactions[t].filecontracts[0].missedproofoutputs[0].value
                 missedProof1Address = transactions[t].filecontracts[0].missedproofoutputs[0].unlockhash
 
@@ -653,7 +665,7 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
 
                 validProof2Value = transactions[t].filecontracts[0].validproofoutputs[1].value
                 validProof2Address = transactions[t].filecontracts[0].validproofoutputs[1].unlockhash
-                
+
                 missedProof1Value = transactions[t].filecontracts[0].missedproofoutputs[0].value
                 missedProof1Address = transactions[t].filecontracts[0].missedproofoutputs[0].unlockhash
 
@@ -676,7 +688,7 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
                 minerFees, windowStart, windowEnd, revisionNum, fileSize, fileSize, validProof1Address, validProof1Value, validProof2Address, validProof2Value,
                 missedProof1Address, missedProof1Value, missedProof2Address, missedProof2Value, missedProof3Address, missedProof3Value, txHeight, timestamp, 'ongoing', renewBool)
         }
-        if (txType == 'revision'){
+        if (txType == 'revision') {
             let hashSyn;
             let totalTransacted;
             let txHeight = height;
@@ -688,7 +700,7 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
             let validProof1Value;
             let validProof1Address;
             let validProof2Value;
-            let validProof2Address;        
+            let validProof2Address;
             let missedProof1Value;
             let missedProof1Address;
             let missedProof2Value;
@@ -731,8 +743,8 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
                     let match = transactions[t].siacoininputs[0].parentid
                     let addr = []
                     let amt = []
-                    for (m =0; m < transactions.length; m++){
-                        if (transactions[m].siacoinoutputids != null){
+                    for (m = 0; m < transactions.length; m++) {
+                        if (transactions[m].siacoinoutputids != null) {
                             if (match == transactions[m].siacoinoutputids[0]) {
                                 matchBool = true
                                 hashSyn = transactions[m].id
@@ -750,7 +762,7 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
                                     addr = siacoininputoutputs[z].unlockhash;
                                     amt = siacoininputoutputs[z].total;
                                     totalTransacted = totalTransacted + amt
-                    
+
                                     addToAddress(addr, '-' + amt, masterHash, 'out', txType, txHeight)
                                         .then((done) => {
                                             // do something
@@ -780,7 +792,7 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
                             addr = siacoininputoutputs[z].unlockhash;
                             amt = siacoininputoutputs[z].total;
                             totalTransacted = totalTransacted + amt
-            
+
                             addToAddress(addr, '-' + amt, masterHash, 'out', txType, txHeight)
                                 .then((done) => {
                                     // do something
@@ -799,14 +811,14 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
             addToTransactions(txHeight, masterHash, parent, txType, totalTransacted, minerFees, timestamp)
             // revision info. The field "synonyms" includes only the contractId to link this TX to the contract created
             addToRevisions(masterHash, contradId, minerFees, newRevision, newFileSize, validProof1Address, validProof1Value,
-                validProof2Address, validProof2Value, missedProof1Address, missedProof1Value, missedProof2Address, 
+                validProof2Address, validProof2Value, missedProof1Address, missedProof1Value, missedProof2Address,
                 missedProof2Value, missedProof3Address, missedProof3Value, txHeight, timestamp, hashSyn)
             // updating contracts with new data
-            updateContracts(newRevision, newFileSize, validProof1Address, validProof1Value, validProof2Address, 
-                validProof2Value, missedProof1Address, missedProof1Value, missedProof2Address, 
+            updateContracts(newRevision, newFileSize, validProof1Address, validProof1Value, validProof2Address,
+                validProof2Value, missedProof1Address, missedProof1Value, missedProof2Address,
                 missedProof2Value, missedProof3Address, missedProof3Value, contradId, txType)
         }
-        if (txType == 'storageproof'){
+        if (txType == 'storageproof') {
             let totalTransacted = 0
             let masterHash = transactions[t].id
             let contractId = transactions[t].storageproofs[0].parentid
@@ -836,7 +848,7 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
                                 /* send each sender to addresses table with amount */
                                 let addr = siacoininputoutputs[z].unlockhash;
                                 let amt = siacoininputoutputs[z].total;
-                
+
                                 addToAddress(addr, '-' + amt, masterHash, 'out', txType, txHeight)
                                     .then((done) => {
                                         // do something
@@ -890,8 +902,8 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
         return new Promise((resolve) => {
             knex('storageproofs').insert({
                 master_hash: masterHash,
-                contract_id: contractId, 
-                hash_syn: hashSyn, 
+                contract_id: contractId,
+                hash_syn: hashSyn,
                 height: txHeight,
                 timestamp: timestamp,
                 fees: minerFees
@@ -904,38 +916,38 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
         })
     }
     async function addToRevisions(masterHash, contractId, fees, newRevision, newFileSize, validProof1Address, validProof1Value,
-        validProof2Address, validProof2Value, missedProof1Address, missedProof1Value, missedProof2Address, missedProof2Value, 
+        validProof2Address, validProof2Value, missedProof1Address, missedProof1Value, missedProof2Address, missedProof2Value,
         missedProof3Address, missedProof3Value, height, timestamp, hashSyn) {
-            return new Promise((resolve) => {
-                knex('revisions').insert({
-                    master_hash: masterHash,
-                    contract_id: contractId,
-                    fees: fees,
-                    new_revision_num: newRevision,
-                    new_filesize: newFileSize,
-                    valid_proof1_address: validProof1Address,
-                    valid_proof1_value: validProof1Value,
-                    valid_proof2_address: validProof2Address,
-                    valid_proof2_value: validProof2Value,
-                    missed_proof1_address: missedProof1Address,
-                    missed_proof1_value: missedProof1Value,
-                    missed_proof2_address: missedProof2Address,
-                    missed_proof2_value: missedProof2Value, 
-                    missed_proof3_address: missedProof3Address, 
-                    missed_proof3_value: missedProof3Value, 
-                    height: height,
-                    timestamp: timestamp,
-                    hash_syn: hashSyn
-                }).then((results) => {
-                    resolve('Inserted');
-                }).catch((error) => {
-                    console.log(error);
-                    resolve('Fail');
-                })
+        return new Promise((resolve) => {
+            knex('revisions').insert({
+                master_hash: masterHash,
+                contract_id: contractId,
+                fees: fees,
+                new_revision_num: newRevision,
+                new_filesize: newFileSize,
+                valid_proof1_address: validProof1Address,
+                valid_proof1_value: validProof1Value,
+                valid_proof2_address: validProof2Address,
+                valid_proof2_value: validProof2Value,
+                missed_proof1_address: missedProof1Address,
+                missed_proof1_value: missedProof1Value,
+                missed_proof2_address: missedProof2Address,
+                missed_proof2_value: missedProof2Value,
+                missed_proof3_address: missedProof3Address,
+                missed_proof3_value: missedProof3Value,
+                height: height,
+                timestamp: timestamp,
+                hash_syn: hashSyn
+            }).then((results) => {
+                resolve('Inserted');
+            }).catch((error) => {
+                console.log(error);
+                resolve('Fail');
             })
-        }
+        })
+    }
     async function addToContracts(masterHash, contractId, allowancePosting, renterValue, collateralPosting, hostValue,
-        fees, windowStart, windowEnd, revisionNum, originalFileSize, currentFileSize, 
+        fees, windowStart, windowEnd, revisionNum, originalFileSize, currentFileSize,
         validProof1Address, validProof1Value, validProof2Address, validProof2Value,
         missedProof1Address, missedProof1Value, missedProof2Address,
         missedProof2Value, missedProof3Address, missedProof3Value, height, timestamp, status, renew) {
@@ -976,89 +988,89 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
         })
     }
     async function updateContracts(revisionNum, currentFileSize, validProof1Address, validProof1Value,
-        validProof2Address, validProof2Value, missedProof1Address, missedProof1Value, missedProof2Address, 
+        validProof2Address, validProof2Value, missedProof1Address, missedProof1Value, missedProof2Address,
         missedProof2Value, missedProof3Address, missedProof3Value, contractId, tx_type) {
-            return new Promise((resolve) => {
-                knex('contracts')
+        return new Promise((resolve) => {
+            knex('contracts')
                 .select('*')
                 .where('contract_id', contractId)
                 .then((success) => {
-                    if (success.length === 0){
+                    if (success.length === 0) {
 
                     } else {
                         switch (tx_type) {
                             case 'revision':
-                            console.log('Contract revision - Updating contract ' + contractId);
-                            knex('contracts')
-                            .where('contract_id', contractId)
-                            .update({
-                                revision_num: revisionNum,
-                                current_filesize: currentFileSize, 
-                                valid_proof1_address: validProof1Address,
-                                valid_proof1_value: validProof1Value, 
-                                valid_proof2_address: validProof2Address,
-                                valid_proof2_value: validProof2Value, 
-                                missed_proof1_address: missedProof1Address, 
-                                missed_proof1_value: missedProof1Value, 
-                                missed_proof2_address: missedProof2Address, 
-                                missed_proof2_value: missedProof2Value, 
-                                missed_proof3_address: missedProof3Address,
-                                missed_proof3_value: missedProof3Value
-                            }).then((results) => {
-                                resolve('Updated')
-                            }).catch((err) => {
-                                console.log(err);
-                            })
+                                console.log('Contract revision - Updating contract ' + contractId);
+                                knex('contracts')
+                                    .where('contract_id', contractId)
+                                    .update({
+                                        revision_num: revisionNum,
+                                        current_filesize: currentFileSize,
+                                        valid_proof1_address: validProof1Address,
+                                        valid_proof1_value: validProof1Value,
+                                        valid_proof2_address: validProof2Address,
+                                        valid_proof2_value: validProof2Value,
+                                        missed_proof1_address: missedProof1Address,
+                                        missed_proof1_value: missedProof1Value,
+                                        missed_proof2_address: missedProof2Address,
+                                        missed_proof2_value: missedProof2Value,
+                                        missed_proof3_address: missedProof3Address,
+                                        missed_proof3_value: missedProof3Value
+                                    }).then((results) => {
+                                        resolve('Updated')
+                                    }).catch((err) => {
+                                        console.log(err);
+                                    })
                         }
 
                     }
                 })
-            }).catch((error) => {
-                console.log(error);
-            })
-    }
-    async function addToTransactions(height, hash, parent, type, total, fees, timestamp) { // add to transactions table
-        console.log('['+type.toUpperCase()+'] attempting to add tx ' + hash + ' to database as a '+type+' transaction.' );
-        return new Promise((resolve) => {
-            knex('transactions')
-            .select('*')
-            .where('tx_id', hash)
-            .then((success) => {
-                if (success.length != 0) {
-                    console.log('Updating ['+type.toUpperCase()+'] with hash of '+hash);
-                    knex('transactions')
-                    .where('tx_id', hash)
-                    .update({
-                        tx_type: type
-                    })
-                    .then((results) => {
-                        resolve('Inserted')
-                    })
-                    .catch((err) => {
-                        console.log(err);
-                    })
-                } else { 
-            knex('transactions').insert({
-                height: height,
-                tx_id: hash,
-                parent_block: parent,
-                tx_type: type,
-                tx_total: total,
-                fees: fees,
-                timestamp: timestamp
-            }).then((results) => {
-                //console.log(results);
-                resolve('Inserted');//console.log(results)
-            }).catch((error) => {
-                console.log(error);
-                resolve('fail');// console.log(error)
-            })
-        }
-        })
-        .catch((error) => { 
+        }).catch((error) => {
             console.log(error);
         })
-    })
+    }
+    async function addToTransactions(height, hash, parent, type, total, fees, timestamp) { // add to transactions table
+        console.log('[' + type.toUpperCase() + '] attempting to add tx ' + hash + ' to database as a ' + type + ' transaction.');
+        return new Promise((resolve) => {
+            knex('transactions')
+                .select('*')
+                .where('tx_id', hash)
+                .then((success) => {
+                    if (success.length != 0) {
+                        console.log('Updating [' + type.toUpperCase() + '] with hash of ' + hash);
+                        knex('transactions')
+                            .where('tx_id', hash)
+                            .update({
+                                tx_type: type
+                            })
+                            .then((results) => {
+                                resolve('Inserted')
+                            })
+                            .catch((err) => {
+                                console.log(err);
+                            })
+                    } else {
+                        knex('transactions').insert({
+                            height: height,
+                            tx_id: hash,
+                            parent_block: parent,
+                            tx_type: type,
+                            tx_total: total,
+                            fees: fees,
+                            timestamp: timestamp
+                        }).then((results) => {
+                            //console.log(results);
+                            resolve('Inserted');//console.log(results)
+                        }).catch((error) => {
+                            console.log(error);
+                            resolve('fail');// console.log(error)
+                        })
+                    }
+                })
+                .catch((error) => {
+                    console.log(error);
+                })
+        })
     }
     async function addToAddress(address, amount, tx_hash, direction, type, height) {
         return new Promise((resolve) => {
@@ -1085,13 +1097,13 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
                 .then((success) => {
                     if (success.length === 0) {
                         console.log('Address ' + address + ' was not found, adding on height', height)
-                        switch(tx_type) {
+                        switch (tx_type) {
                             case 'sctx':
-                                case 'coinbase':
-                                case 'contract':
-                                case 'collateral':
-                                case 'allowance':
-                                case 'storageproof':
+                            case 'coinbase':
+                            case 'contract':
+                            case 'collateral':
+                            case 'allowance':
+                            case 'storageproof':
                                 if (direction == 'in') {
                                     knex('address_totals')
                                         .insert({
@@ -1124,7 +1136,7 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
                                             console.log(error);
                                         })
                                 }
-                            break;
+                                break;
 
                             case 'sftx':
                                 if (direction == 'in') {
@@ -1137,7 +1149,7 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
                                             last_seen: height
                                         })
                                         .then((added) => {
-                                            console.log('[SPF] Added ' + address + ' with amount ' + amount );
+                                            console.log('[SPF] Added ' + address + ' with amount ' + amount);
                                             resolve('added');
                                         })
                                         .catch((error) => {
@@ -1160,17 +1172,17 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
                                             console.log(error);
                                         })
                                 }
-                             break;
+                                break;
                         }
                     } else {
                         switch (tx_type) {
                             case 'sctx':
-                                case 'coinbase':
-                                case 'contract':
-                                case 'collateral':
-                                case 'allowance':
-                                case 'revision':
-                                case 'storageproof':
+                            case 'coinbase':
+                            case 'contract':
+                            case 'collateral':
+                            case 'allowance':
+                            case 'revision':
+                            case 'storageproof':
                                 console.log('[SCP] Address ' + address + ' already exists, updating.')
                                 let currentamountscp = Number(success[0].totalscp);
                                 let convertedscp = amount;
@@ -1202,7 +1214,7 @@ async function processTransaction(b, transactions, timestamp, minerpayouts) { //
                                             console.log(error);
                                         })
                                 }
-                            break;
+                                break;
 
                             case 'sftx':
                                 console.log('[SPF] Address ' + address + ' already exists, updating.')
